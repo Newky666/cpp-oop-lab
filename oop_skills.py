@@ -648,6 +648,67 @@ SKILLS: List[Dict[str, Any]] = [
         ),
         "check": "处理函数参数顺序对不对(UINT nFlags, CPoint point)? 坐标要客户区还是屏幕坐标?",
     },
+    {
+        "id": "K20", "level": 4, "name": "映像模式与坐标变换",
+        "keywords": ["映像模式", "坐标变换", "MM_TEXT", "MM_LOMETRIC", "SetMapMode",
+                     "逻辑坐标"],
+        "summary": "逻辑坐标到设备坐标的换算规则由「映像模式」决定 —— 默认 MM_TEXT 是像素, 换成 MM_LOMETRIC 就是 0.1 毫米。",
+        "points": [
+            "默认映像模式 MM_TEXT: 1 逻辑单位 = 1 像素, 原点在客户区左上角, y 轴向下。",
+            "SetMapMode(MM_LOMETRIC): 1 逻辑单位 = 0.1 毫米, **y 轴向上**; MM_HIMETRIC 则 0.01 毫米。",
+            "按物理尺寸绘图的场合(打印、图纸)要用公制模式, 否则换台显示器/改分辨率图就变形。",
+            "逻辑坐标 = 你传给画图函数的数值; 设备坐标 = 屏幕像素。两者之间由映像模式 + 窗口原点共同换算。",
+        ],
+        "pitfalls": [
+            "切换映像模式后, 原来的坐标数值含义全变了(像素 → 0.1mm), 忘了同步改数值画面就“缩没了”;",
+            "按 MM_TEXT 的习惯在 MM_LOMETRIC 下画 —— y 轴方向是反的, 图形上下颠倒;",
+            "设置映像模式要在 OnPaint 里对当前 DC 做(CPaintDC dc(this); dc.SetMapMode(...)), 换一个 DC 就要重设。",
+        ],
+        "example": (
+            "#include <afxwin.h>\n"
+            "void CMyView::OnPaint()\n"
+            "{\n"
+            "    CPaintDC dc(this);\n"
+            "    dc.SetMapMode(MM_LOMETRIC);        // 之后坐标单位 = 0.1 毫米, y 向上\n"
+            "    dc.Rectangle(100, 50, 500, 350);   // 40mm x 30mm 的矩形\n"
+            "}"
+        ),
+        "check": "我的坐标是像素还是物理尺寸? 对应的映像模式设对了吗?",
+    },
+    {
+        "id": "K21", "level": 4, "name": "字体与文本输出",
+        "keywords": ["字体", "文本输出", "CFont", "CreateFont", "CreatePointFont",
+                     "LOGFONT", "TextOut", "DrawText", "SetTextColor", "SetBkColor",
+                     "SetBkMode", "SetFont"],
+        "summary": "文本输出三件套: 选字体(SetFont) + 设颜色(SetTextColor/SetBkColor) + 输出(TextOut/DrawText)。",
+        "points": [
+            "创建字体: CFont + CreateFont(高度, 粗细, ...) 或更省事的 CreatePointFont(点大小, 字体名)。",
+            "像其它 GDI 对象一样: SetFont 选进 DC 要保存旧字体指针, 用完恢复(否则 GDI 泄漏)。",
+            "颜色: SetTextColor 设文字颜色, SetBkColor 设背景色; SetBkMode(TRANSPARENT) 让文字背景透明。",
+            "TextOut(x, y, text) 输出单行; DrawText(text, &rect, DT_CENTER | DT_WORDBREAK) 支持居中与自动换行。",
+            "居中排版要先量文本尺寸: dc.GetTextExtent(text) 得到宽高, 再反推左上角。",
+        ],
+        "pitfalls": [
+            "创建了 CFont 却忘了 SetFont —— 输出还是默认系统字体;",
+            "SetBkMode 不设 TRANSPARENT 时, 文字会带着黑/白底色把下面的图形盖住;",
+            "DrawText 默认会擦掉矩形区域背景(要 dt 的参数控制), 在已有图形上叠字要注意。",
+        ],
+        "example": (
+            "#include <afxwin.h>\n"
+            "void CMyWnd::OnPaint()\n"
+            "{\n"
+            "    CPaintDC dc(this);\n"
+            "    CFont font;\n"
+            "    font.CreatePointFont(200, \"宋体\");        // 20 磅(单位为 0.1 磅)\n"
+            "    CFont* oldFont = dc.SelectObject(&font);\n"
+            "    dc.SetTextColor(RGB(255, 0, 0));          // 红色文字\n"
+            "    dc.SetBkMode(TRANSPARENT);                // 透明背景\n"
+            "    dc.TextOut(20, 20, \"Hello, MFC\");\n"
+            "    dc.SelectObject(oldFont);                 // 恢复旧字体\n"
+            "}"
+        ),
+        "check": "字体选进 DC 了吗? 旧字体恢复了吗? 背景模式设成透明了吗?",
+    },
 ]
 
 SKILL_BY_ID: Dict[str, Dict[str, Any]] = {s["id"]: s for s in SKILLS}

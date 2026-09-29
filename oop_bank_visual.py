@@ -686,4 +686,219 @@ PROBLEMS: List[Dict[str, Any]] = [
             {"pattern": r"\bVK_ESCAPE\b", "hint": "按键判断用虚拟键码 VK_ESCAPE"},
         ],
     ),
+    # ---------------------------------------------------------------- v07
+    _p(
+        id="v07",
+        slug="font-text",
+        title="字体与文本输出（教材第 3 章）",
+        topics=["字体", "文本输出"],
+        framework="mfc",
+        subsystem="windows",
+        desc=(
+            "教材第 3 章: 文本输出 = 选字体 + 设颜色 + 输出。"
+            "本题要求在窗口正中输出一行红色标题, 背景透明(不盖住底下的内容), "
+            "并演示 GDI 对象的完整使用套路(创建 → 选入 → 用 → 恢复)。"
+        ),
+        require=[
+            "创建 20 磅的字体: CFont + CreatePointFont(200, \"宋体\")。",
+            "用 SelectObject 把字体选进 DC 并保存旧字体指针。",
+            "用 SetTextColor 把文字设为红色(RGB(255, 0, 0))。",
+            "用 SetBkMode(TRANSPARENT) 让文字背景透明。",
+            "用 DrawText 把 \"Hello, MFC\" 在客户区居中输出(DT_CENTER | DT_VCENTER | DT_SINGLELINE)。",
+            "输出完成后把旧字体恢复回去(SelectObject)。",
+        ],
+        io="图形界面程序: 窗口正中出现一行居中的红色文字。",
+        hints=[
+            "CreatePointFont(200, ...) 的参数单位是 0.1 磅 —— 200 就是 20 磅。",
+            "居中用: CRect rect; GetClientRect(&rect); dc.DrawText(text, &rect, DT_CENTER | ...)。",
+            "DT_VCENTER 必须和 DT_SINGLELINE 一起用才有效。",
+        ],
+        checklist=[
+            "CFont 创建后 SetFont/SelectObject 了吗?",
+            "SetBkMode(TRANSPARENT) 设了吗?",
+            "旧字体恢复了吗?",
+        ],
+        skeleton=(
+            "#include <afxwin.h>\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"字体与文本\"); }\n"
+            "    afx_msg void OnPaint();\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "    ON_WM_PAINT()\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "// ================== TODO: 按教材第 3 章完成 ==================\n"
+            "void CMainWnd::OnPaint()\n"
+            "{\n"
+            "    CPaintDC dc(this);\n"
+            "\n"
+            "    // TODO: 1) 创建 20 磅字体(CFont + CreatePointFont(200, \"宋体\"))\n"
+            "    // TODO: 2) SelectObject 选进 DC, 记下旧字体\n"
+            "    // TODO: 3) SetTextColor 红色 + SetBkMode(TRANSPARENT)\n"
+            "    // TODO: 4) DrawText 把 \"Hello, MFC\" 在客户区居中\n"
+            "    // TODO: 5) 恢复旧字体\n"
+            "}\n"
+            "// ============================================================\n"
+            + _APP_TAIL
+        ),
+        solution=(
+            "#include <afxwin.h>\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"字体与文本\"); }\n"
+            "    afx_msg void OnPaint();\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "    ON_WM_PAINT()\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "void CMainWnd::OnPaint()\n"
+            "{\n"
+            "    CPaintDC dc(this);\n"
+            "\n"
+            "    CFont font;\n"
+            "    font.CreatePointFont(200, \"宋体\");        // 20 磅(单位是 0.1 磅)\n"
+            "    CFont* oldFont = dc.SelectObject(&font);   // 选进 DC 并保存旧字体\n"
+            "\n"
+            "    dc.SetTextColor(RGB(255, 0, 0));           // 红色文字\n"
+            "    dc.SetBkMode(TRANSPARENT);                 // 文字背景透明\n"
+            "\n"
+            "    CRect rect;\n"
+            "    GetClientRect(&rect);                      // 整块客户区\n"
+            "    dc.DrawText(\"Hello, MFC\", &rect,\n"
+            "                DT_CENTER | DT_VCENTER | DT_SINGLELINE);   // 居中输出\n"
+            "\n"
+            "    dc.SelectObject(oldFont);                  // 恢复旧字体, 防 GDI 泄漏\n"
+            "}\n"
+            + _APP_TAIL
+        ),
+        checks=[
+            {"pattern": r"\bCFont\b", "hint": "要创建 CFont 字体对象"},
+            {"pattern": r"\bCreatePointFont\s*\(|\bCreateFont\s*\(", "hint": "用 CreatePointFont/CreateFont 创建字体"},
+            {"pattern": r"\bSetTextColor\s*\(", "hint": "用 SetTextColor 设置文字颜色"},
+            {"pattern": r"\bSetBkMode\s*\(", "hint": "用 SetBkMode(TRANSPARENT) 让文字背景透明"},
+            {"pattern": r"\bDrawText\s*\(", "hint": "用 DrawText 输出文本(支持居中)"},
+            {"pattern": r"\bSelectObject\s*\(|\bSetFont\s*\(", "hint": "字体要选进 DC(SelectObject/SetFont)"},
+            {"pattern": r"SelectObject\s*\(\s*old", "hint": "用完要把旧字体恢复回去(SelectObject(oldFont))"},
+        ],
+    ),
+    # ---------------------------------------------------------------- v08
+    _p(
+        id="v08",
+        slug="map-mode",
+        title="映像模式：按毫米画图（教材 2.3）",
+        topics=["映像模式", "绘图"],
+        framework="mfc",
+        subsystem="windows",
+        desc=(
+            "教材 2.3: 默认 MM_TEXT 的坐标单位是像素, 换台显示器图的大小就变了。"
+            "把映像模式切成 MM_LOMETRIC 后, 1 个逻辑单位 = 0.1 毫米, 图形就有了"
+            "真实的物理尺寸。本题要求画一个 40mm×30mm 的矩形和它的对角线。"
+        ),
+        require=[
+            "在 OnPaint 里用 CPaintDC 取设备环境后, 调用 SetMapMode(MM_LOMETRIC)。",
+            "画一个 400×300 逻辑单位的矩形(= 40mm × 30mm), 即 Rectangle(100, 100, 500, 400)。",
+            "画一条从 (100, 400) 到 (500, 100) 的对角线(MoveTo + LineTo)。",
+            "在代码注释里注明「1 逻辑单位 = 0.1 毫米、y 轴向上」, 提醒自己坐标方向变了。",
+        ],
+        io="图形界面程序: 窗口里出现一个 40mm×30mm 的矩形与它的对角线。",
+        hints=[
+            "MM_LOMETRIC(公制) 下 100 个单位 = 10 毫米; 40 毫米 = 400 个单位。",
+            "注意 y 轴向上: 数值更大的 y 在上方 —— Rectangle 的 top 参数反而更小。",
+            "想让图形在任何分辨率下都保持物理尺寸, 这就是正确做法; 只想按像素画就用默认 MM_TEXT。",
+        ],
+        checklist=[
+            "SetMapMode(MM_LOMETRIC) 在画图之前调用了吗?",
+            "坐标数值是按 0.1 毫米给的(不是像素)吗?",
+            "y 轴方向的口诀记住了吗?(MM_TEXT 向下 / MM_LOMETRIC 向上)",
+        ],
+        skeleton=(
+            "#include <afxwin.h>\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"映像模式\"); }\n"
+            "    afx_msg void OnPaint();\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "    ON_WM_PAINT()\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "// ================== TODO: 按教材 2.3 完成 ==================\n"
+            "void CMainWnd::OnPaint()\n"
+            "{\n"
+            "    CPaintDC dc(this);\n"
+            "\n"
+            "    // TODO: 1) SetMapMode(MM_LOMETRIC)  —— 1 逻辑单位 = 0.1 毫米, y 轴向上\n"
+            "    // TODO: 2) 画 40mm x 30mm 的矩形(即 400 x 300 逻辑单位)\n"
+            "    // TODO: 3) 画从 (100, 400) 到 (500, 100) 的对角线(MoveTo + LineTo)\n"
+            "}\n"
+            "// ==========================================================\n"
+            + _APP_TAIL
+        ),
+        solution=(
+            "#include <afxwin.h>\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"映像模式\"); }\n"
+            "    afx_msg void OnPaint();\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "    ON_WM_PAINT()\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "void CMainWnd::OnPaint()\n"
+            "{\n"
+            "    CPaintDC dc(this);\n"
+            "\n"
+            "    dc.SetMapMode(MM_LOMETRIC);\n"
+            "    // 1 逻辑单位 = 0.1 毫米, y 轴向上(与 MM_TEXT 相反)\n"
+            "\n"
+            "    dc.Rectangle(100, 100, 500, 400);   // 400x300 单位 = 40mm x 30mm\n"
+            "\n"
+            "    dc.MoveTo(100, 400);                // 对角线: 从左下(y=400 在下) \n"
+            "    dc.LineTo(500, 100);                //         到右上(y=100 在上)\n"
+            "}\n"
+            + _APP_TAIL
+        ),
+        checks=[
+            {"pattern": r"\bSetMapMode\s*\(", "hint": "要调用 SetMapMode 切换映像模式"},
+            {"pattern": r"\bMM_LOMETRIC\b", "hint": "用公制模式 MM_LOMETRIC(0.1 毫米)"},
+            {"pattern": r"\bRectangle\s*\(", "hint": "要画一个矩形"},
+            {"pattern": r"\bMoveTo\b[\s\S]*\bLineTo\b", "hint": "用 MoveTo + LineTo 画对角线"},
+        ],
+    ),
 ]
