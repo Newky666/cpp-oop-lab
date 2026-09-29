@@ -61,6 +61,28 @@ def window_geometry(screen_width: int, screen_height: int,
     return width, height, x, y
 
 
+def _apply_window_icon(root: tk.Tk) -> None:
+    """给窗口设置图标。
+
+    优先用内嵌 PNG(oop_lab_icon.py, 由 tools/make_ico.py 生成) —— 打包成单文件
+    exe 后它依然在; 回退到项目根的 oop_lab.ico; 都没有就保持 Tk 默认, 绝不报错。
+    """
+    try:
+        from oop_lab_icon import ICON_PNG_B64
+        icon = tk.PhotoImage(data=ICON_PNG_B64)
+        root.iconphoto(True, icon)
+        root._oop_icon = icon          # 必须保住引用: 否则会被 GC, 图标变空白
+        return
+    except Exception:
+        pass
+    try:
+        ico = os.path.join(os.path.dirname(os.path.abspath(__file__)), "oop_lab.ico")
+        if os.path.isfile(ico):
+            root.iconbitmap(ico)
+    except Exception:
+        pass
+
+
 class LabWindow:
     """整个界面。对外只需要 root 一个参数, 方便测试里直接 new 出来。"""
 
@@ -194,7 +216,7 @@ class LabWindow:
         keep = self.problem["id"] if self.problem else ""
         self.profile = oop_coach.LearnerProfile()
         self.tree.delete(*self.tree.get_children())
-        for level in (1, 2, 3):
+        for level in sorted(oc.LEVEL_NAMES):
             rows = [p for p in self.problems if int(p["level"]) == level]
             if not rows:
                 continue
@@ -538,6 +560,7 @@ def main(argv=None) -> int:
     oc.ensure_dir(oc.DATA_DIR)
     oc.LOG.info("图形界面启动: 数据目录 %s", oc.BASE_DIR)
     root = tk.Tk()
+    _apply_window_icon(root)
     try:
         ttk.Style().theme_use("vista")
     except tk.TclError:

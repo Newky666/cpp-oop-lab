@@ -25,14 +25,20 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 def _build_pyinstaller_args(onedir: bool = False) -> list:
     """拼 PyInstaller 参数。单独拆出来是为了能被单元测试检查(不用真的打包)。"""
-    return [
+    args = [
         sys.executable, "-m", "PyInstaller",
         "--noconfirm", "--clean", "--log-level", "WARN",
         "--onedir" if onedir else "--onefile",
         "--windowed",
         "--name", APP_NAME,
-        os.path.join(HERE, ENTRY),
     ]
+    # 文件图标: PyInstaller 的 --icon 必须绝对路径(相对路径会按 specpath 解析失败);
+    # 没有 .ico 时静默跳过, 不让缺图标阻塞打包。
+    icon = os.path.join(HERE, "oop_lab.ico")
+    if os.path.isfile(icon):
+        args.extend(["--icon", icon])
+    args.append(os.path.join(HERE, ENTRY))
+    return args
 
 
 def main(argv=None) -> int:

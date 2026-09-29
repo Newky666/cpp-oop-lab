@@ -1,0 +1,37 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""oop_lab_icon.py - 图标数据（由 tools/make_ico.py 生成, 请勿手改）
+
+64×64 PNG 的 base64; 窗口启动时 iconphoto 用, 不依赖外部文件。
+"""
+
+ICON_PNG_B64 = (
+    "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"
+)
