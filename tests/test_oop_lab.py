@@ -140,7 +140,7 @@ class TestBank(unittest.TestCase):
         ids = [p["id"] for p in oop_bank.BUILTIN]
         self.assertEqual(len(ids), len(set(ids)))
         # 显式数字是刻意的闸门: 题库数量变了要有人有意识地确认一次
-        self.assertEqual(len(ids), 36)
+        self.assertEqual(len(ids), 40)
 
     def test_every_builtin_problem_has_tests_and_solution(self):
         for problem in oop_bank.BUILTIN:
@@ -791,9 +791,9 @@ class TestSkills(unittest.TestCase):
 
     def test_skill_ids_unique_and_ordered(self):
         ids = oop_skills.all_skill_ids()
-        # 17 个 C++ 面向对象知识点 + 13 个教材第 2~8 章的 MFC/Windows 知识点
-        self.assertEqual(len(ids), 30)
-        self.assertEqual(len(set(ids)), 30)
+        # 17 个 C++ 面向对象知识点 + 16 个教材第 2~8 章的 MFC/Windows 知识点
+        self.assertEqual(len(ids), 33)
+        self.assertEqual(len(set(ids)), 33)
         self.assertEqual(oop_skills.path_order()[0], "K01")
         for skill_id in ids:
             item = oop_skills.skill(skill_id)

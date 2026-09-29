@@ -934,6 +934,104 @@ SKILLS: List[Dict[str, Any]] = [
         ),
         "check": "范围与位置都设置了吗? 通知走的是滚动消息还是 WM_NOTIFY?",
     },
+    {
+        "id": "K30", "level": 4, "name": "文档视图与串行化",
+        "keywords": ["文档视图", "CDocument", "CView", "Serialize", "串行化",
+                     "CArchive", "SDI", "MDI", "文档模板"],
+        "summary": "SDI/MDI 程序把「数据」放文档(CDocument)、「显示」放视图(CView); 存盘/读盘统一走 Serialize(CArchive)。",
+        "points": [
+            "一个文档可以有多个视图: 视图里 GetDocument() 拿文档指针, 文档用 UpdateAllViews() 通知所有视图刷新。",
+            "文档模板(CSingleDocTemplate / CMultiDocTemplate)把 文档类/框架类/视图类 绑在一起, 在 InitInstance 里 AddDocTemplate 注册。",
+            "串行化: 文档重写 Serialize(CArchive& ar), 用 ar.IsStoring() 判断方向, ar << / ar >> 像流一样读写数据。",
+            "框架会在 新建/打开/存盘 时自动调用 OnNewDocument / OnOpenDocument / OnSaveDocument, 你只管在 Serialize 里写数据格式。",
+        ],
+        "pitfalls": [
+            "把数据存在视图里 —— 换一个视图/窗口数据就丢了, 数据应该在文档里;",
+            "Serialize 里读和写的顺序不一致 → 读出的数据全部错位;",
+            "InitInstance 里忘了 AddDocTemplate → 程序启动即报错或直接退出。",
+        ],
+        "example": (
+            "#include <afxwin.h>\n"
+            "// 文档类: 数据 + 串行化\n"
+            "class CNoteDoc : public CDocument {\n"
+            "public:\n"
+            "    CString m_text;\n"
+            "    int m_count = 0;\n"
+            "    virtual void Serialize(CArchive& ar) {\n"
+            "        if (ar.IsStoring())\n"
+            "            ar << m_text << m_count;       // 存盘: 写的顺序\n"
+            "        else\n"
+            "            ar >> m_text >> m_count;       // 读盘: 必须同样的顺序\n"
+            "    }\n"
+            "};\n"
+            "// 视图类: 显示 + 取文档\n"
+            "class CNoteView : public CView {\n"
+            "public:\n"
+            "    CNoteDoc* GetDocument() { return (CNoteDoc*)m_pDocument; }\n"
+            "};"
+        ),
+        "check": "数据在文档里还是视图里? Serialize 的读写顺序对称吗?",
+    },
+    {
+        "id": "K31", "level": 4, "name": "命令路由与快捷菜单/工具条",
+        "keywords": ["命令路由", "快捷菜单", "TrackPopupMenu", "工具条", "CToolBar",
+                     "状态栏", "CStatusBar", "右键菜单"],
+        "summary": "菜单命令没人处理时会沿「视图 → 文档 → 框架 → 应用」自动传递(命令路由); 快捷菜单用 TrackPopupMenu 弹出。",
+        "points": [
+            "命令路由: ON_COMMAND 写在视图/文档/框架/应用任意一层都能收到消息, 框架自动把命令传给“最内层”的处理者。",
+            "快捷菜单: OnContextMenu(或 OnRButtonDown)里: CMenu::LoadMenu + GetSubMenu → TrackPopupMenu(TPM_RIGHTBUTTON, 屏幕x, 屏幕y, this)。",
+            "TrackPopupMenu 的坐标是**屏幕坐标** —— 鼠标消息给的是客户区坐标, 先 ClientToScreen 转换。",
+            "工具条 CToolBar / 状态栏 CStatusBar 的按钮与窗格由资源定义(需要 .rc); 菜单项与按钮的可用状态统一用 ON_UPDATE_COMMAND_UI 更新。",
+        ],
+        "pitfalls": [
+            "快捷菜单坐标忘了 ClientToScreen → 菜单弹在屏幕左上角而不是鼠标处;",
+            "弹菜单前忘了 SetForegroundWindow / 弹完忘了 PostMessage(WM_NULL) → 菜单点不掉(不释放捕获);",
+            "工具条按钮 ID 与命令处理函数的 ID 不一致 → 按钮点了没反应。",
+        ],
+        "example": (
+            "#include <afxwin.h>\n"
+            "// 声明: afx_msg void OnContextMenu(CWnd* pWnd, CPoint point);\n"
+            "//       消息映射: ON_WM_CONTEXTMENU()\n"
+            "void CMainWnd::OnContextMenu(CWnd* /*pWnd*/, CPoint point)\n"
+            "{\n"
+            "    CMenu menu;\n"
+            "    menu.LoadMenu(IDR_POPUP);               // 资源里的菜单(也可 CreatePopupMenu 动态建)\n"
+            "    CMenu* popup = menu.GetSubMenu(0);\n"
+            "    popup->TrackPopupMenu(TPM_RIGHTBUTTON, point.x, point.y, this);\n"
+            "    // OnContextMenu 传进来的 point 已经是屏幕坐标, 不用再转换\n"
+            "}"
+        ),
+        "check": "快捷菜单的坐标是屏幕坐标吗? 命令映射挂在哪一层(视图/文档/框架)?",
+    },
+    {
+        "id": "K32", "level": 4, "name": "多媒体程序设计",
+        "keywords": ["多媒体", "PlaySound", "mciSendString", "音频", "winmm",
+                     "MCI", "Media Player"],
+        "summary": "最简单的音频播放是 PlaySound; 更复杂的控制(wav/mp3/暂停/定位)用 MCI(mciSendString)。",
+        "points": [
+            "PlaySound(文件名, NULL, SND_FILENAME | SND_ASYNC) 异步播放 wav; 需要链接 winmm.lib。",
+            "PlaySound(NULL, NULL, SND_PURGE) 停止当前播放; SND_LOOP 循环。",
+            "MCI 一行一命令: mciSendString(\"open a.mp3 alias m\", ...) → \"play m\" → \"close m\", 支持更多格式与控制。",
+            "教材还介绍 Windows Media Player 控件(ActiveX, 在 .rc 对话框里插入), 功能最全但要资源。",
+        ],
+        "pitfalls": [
+            "忘了链接 winmm.lib → LNK2019 unresolved external symbol PlaySound;",
+            "用 SND_SYNC 播放长音频 → 整个界面卡住(应该用 SND_ASYNC);",
+            "音频文件用相对路径, 工作目录不对就找不到 → 用绝对路径或确认工作目录。",
+        ],
+        "example": (
+            "#include <afxwin.h>\n"
+            "#pragma comment(lib, \"winmm.lib\")          // 或工程属性里加 winmm.lib\n"
+            "void CMainWnd::OnPlayMusic()\n"
+            "{\n"
+            "    // 异步播放(不卡界面):\n"
+            "    PlaySound(\"C:\\\\music\\\\bgm.wav\", NULL, SND_FILENAME | SND_ASYNC);\n"
+            "    // 停止:\n"
+            "    // PlaySound(NULL, NULL, SND_PURGE);\n"
+            "}"
+        ),
+        "check": "链接了 winmm.lib 吗? 用的是异步播放吗? 文件路径能找到吗?",
+    },
 ]
 
 SKILL_BY_ID: Dict[str, Dict[str, Any]] = {s["id"]: s for s in SKILLS}

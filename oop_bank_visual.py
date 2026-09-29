@@ -1627,4 +1627,470 @@ PROBLEMS: List[Dict[str, Any]] = [
             {"pattern": r"\bOnTimer\b", "hint": "要实现 OnTimer 响应定时器"},
         ],
     ),
+    # ---------------------------------------------------------------- v15
+    _p(
+        id="v15",
+        slug="doc-view-serialize",
+        title="文档视图与串行化（教材 7.1~7.2）",
+        topics=["文档视图", "串行化"],
+        framework="mfc",
+        subsystem="windows",
+        needs_resource=True,    # 文档模板要用 IDR_MAINFRAME 资源
+        desc=(
+            "教材 7.1: SDI 程序把数据放文档(CDocument)、显示放视图(CView), "
+            "存盘/读盘统一走 Serialize(CArchive)。本题按教材结构补全一个便签程序: "
+            "文档负责数据与串行化, 视图负责显示与取文档。"
+            "(完整 SDI 工程的文档模板要用到 IDR_MAINFRAME 资源, 所以本题按要点检查评分。)"
+        ),
+        require=[
+            "文档类 CNoteDoc 派生自 CDocument, 含数据成员 CString m_text 与 int m_count。",
+            "重写 Serialize(CArchive& ar): 用 ar.IsStoring() 判断方向, 存为 `ar << m_text << m_count`。",
+            "读盘用同样的顺序 `ar >> m_text >> m_count`(顺序必须与存盘一致)。",
+            "视图类 CNoteView 派生自 CView, 提供 CNoteDoc* GetDocument() 返回 (CNoteDoc*)m_pDocument。",
+            "在视图的 OnDraw 里通过 GetDocument() 取数据并显示(比如 TextOut)。",
+        ],
+        io="图形界面程序: SDI 便签; 新建/打开/保存走 MFC 框架, 数据格式由 Serialize 决定。",
+        hints=[
+            "文档类里别忘了 DECLARE_DYNCREATE / IMPLEMENT_DYNCREATE(框架要靠它动态创建文档);",
+            "Serialize 是个虚函数, 重写时签名必须一模一样: virtual void Serialize(CArchive& ar)。",
+            "GetDocument() 是 MFC 向导在视图里生成的模式, 内部就是强转 m_pDocument。",
+        ],
+        checklist=[
+            "数据成员放在文档类里了吗?",
+            "Serialize 的读写顺序对称吗? IsStoring 判断了吗?",
+            "视图通过 GetDocument() 取文档而不是自己存数据吧?",
+        ],
+        skeleton=(
+            "#include <afxwin.h>\n"
+            "\n"
+            "// ================== TODO: 按教材 7.1 补全文档类与视图类 ==================\n"
+            "class CNoteDoc : public CDocument {\n"
+            "public:\n"
+            "    CString m_text;                 // 数据: 便签内容\n"
+            "    int m_count;                    // 数据: 字数\n"
+            "    // TODO: 重写 Serialize(CArchive& ar): IsStoring 分支, 读写顺序一致\n"
+            "    DECLARE_DYNCREATE(CNoteDoc)\n"
+            "};\n"
+            "\n"
+            "class CNoteView : public CView {\n"
+            "public:\n"
+            "    // TODO: GetDocument(): 返回 (CNoteDoc*)m_pDocument\n"
+            "    // TODO: OnDraw(CDC* pDC): 取文档数据, 用 pDC->TextOut 显示\n"
+            "};\n"
+            "// ==========================================================================\n"
+            "\n"
+            "#include \"resource.h\"      // IDR_MAINFRAME(文档模板要用的菜单/图标资源)\n"
+            "class CNoteApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "BOOL CNoteApp::InitInstance()\n"
+            "{\n"
+            "    CSingleDocTemplate* tmpl = new CSingleDocTemplate(\n"
+            "        IDR_MAINFRAME, RUNTIME_CLASS(CNoteDoc),\n"
+            "        RUNTIME_CLASS(CFrameWnd), RUNTIME_CLASS(CNoteView));\n"
+            "    AddDocTemplate(tmpl);               // 不注册文档模板, 程序起不来\n"
+            "    return CWinApp::InitInstance();\n"
+            "}\n"
+            "CNoteApp theApp;\n"
+        ),
+        solution=(
+            "#include <afxwin.h>\n"
+            "\n"
+            "class CNoteDoc : public CDocument {\n"
+            "public:\n"
+            "    CString m_text;\n"
+            "    int m_count = 0;\n"
+            "\n"
+            "    virtual void Serialize(CArchive& ar)\n"
+            "    {\n"
+            "        if (ar.IsStoring())\n"
+            "            ar << m_text << m_count;        // 存盘\n"
+            "        else\n"
+            "            ar >> m_text >> m_count;        // 读盘: 同样的顺序\n"
+            "    }\n"
+            "    DECLARE_DYNCREATE(CNoteDoc)\n"
+            "};\n"
+            "IMPLEMENT_DYNCREATE(CNoteDoc, CDocument)\n"
+            "\n"
+            "class CNoteView : public CView {\n"
+            "public:\n"
+            "    CNoteDoc* GetDocument() { return (CNoteDoc*)m_pDocument; }\n"
+            "    virtual void OnDraw(CDC* pDC)\n"
+            "    {\n"
+            "        CNoteDoc* doc = GetDocument();\n"
+            "        pDC->TextOut(20, 20, doc->m_text);  // 显示文档里的数据\n"
+            "    }\n"
+            "    DECLARE_DYNCREATE(CNoteView)\n"
+            "};\n"
+            "IMPLEMENT_DYNCREATE(CNoteView, CView)\n"
+            "\n"
+            "#include \"resource.h\"\n"
+            "class CNoteApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "BOOL CNoteApp::InitInstance()\n"
+            "{\n"
+            "    CSingleDocTemplate* tmpl = new CSingleDocTemplate(\n"
+            "        IDR_MAINFRAME, RUNTIME_CLASS(CNoteDoc),\n"
+            "        RUNTIME_CLASS(CFrameWnd), RUNTIME_CLASS(CNoteView));\n"
+            "    AddDocTemplate(tmpl);\n"
+            "    return CWinApp::InitInstance();\n"
+            "}\n"
+            "CNoteApp theApp;\n"
+        ),
+        checks=[
+            {"pattern": r"\bCDocument\b", "hint": "文档类要派生自 CDocument"},
+            {"pattern": r"\bCView\b", "hint": "视图类要派生自 CView"},
+            {"pattern": r"\bSerialize\s*\(\s*CArchive\s*&", "hint": "要重写 Serialize(CArchive& ar)"},
+            {"pattern": r"\bIsStoring\b", "hint": "用 ar.IsStoring() 区分存盘/读盘"},
+            {"pattern": r"\bGetDocument\s*\(", "hint": "视图里要提供 GetDocument()"},
+            {"pattern": r"\bCSingleDocTemplate\b|\bCMultiDocTemplate\b", "hint": "SDI 用 CSingleDocTemplate 注册文档模板"},
+        ],
+    ),
+    # ---------------------------------------------------------------- v16
+    _p(
+        id="v16",
+        slug="context-menu",
+        title="快捷菜单与命令响应（教材 7.3~7.4）",
+        topics=["快捷菜单", "命令路由"],
+        framework="mfc",
+        subsystem="windows",
+        desc=(
+            "教材 7.4: 右键快捷菜单的核心是 TrackPopupMenu —— 用 CMenu 动态建(或 LoadMenu 加载)"
+            "一个弹出菜单, 在鼠标位置弹出来, 菜单项照旧用 ON_COMMAND 响应。"
+            "本题不用资源文件, 全部动态创建。"
+        ),
+        require=[
+            "处理 WM_CONTEXTMENU 消息: afx_msg void OnContextMenu(CWnd* pWnd, CPoint point);",
+            "消息映射表里加 ON_WM_CONTEXTMENU()。",
+            "在 OnContextMenu 里用 CMenu::CreatePopupMenu 创建菜单, AppendMenu 添加两项(关于/退出)。",
+            "用 menu.TrackPopupMenu(TPM_RIGHTBUTTON, point.x, point.y, this) 在鼠标处弹出。",
+            "两个菜单项分别用 ON_COMMAND(IDM_ABOUT, ...) / ON_COMMAND(IDM_QUIT, ...) 响应。",
+        ],
+        io="图形界面程序: 窗口里点右键弹出快捷菜单, 选「关于」弹消息框、选「退出」关窗口。",
+        hints=[
+            "OnContextMenu 的 point 参数**已经是屏幕坐标**, 直接传给 TrackPopupMenu 即可(不用再转换)。",
+            "CMenu 局部对象在 TrackPopupMenu 返回后再析构是安全的(弹出期间函数阻塞)。",
+            "MF_SEPARATOR 加分隔线: AppendMenu(MF_SEPARATOR, 0, NULL)。",
+        ],
+        checklist=[
+            "ON_WM_CONTEXTMENU 与 ON_COMMAND 都挂了吗?",
+            "TrackPopupMenu 的坐标用的是 point(屏幕坐标)吗?",
+            "TPM_RIGHTBUTTON 标志加了吗?",
+        ],
+        skeleton=(
+            "#include <afxwin.h>\n"
+            "\n"
+            "// TODO: #define IDM_ABOUT 6001 / IDM_QUIT 6002\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"快捷菜单练习\"); }\n"
+            "    // TODO: 声明 OnContextMenu(CWnd*, CPoint) / OnAbout() / OnQuit()\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "    // TODO: ON_WM_CONTEXTMENU() 与两个 ON_COMMAND\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "// ================== TODO: 按教材 7.4 完成 ==================\n"
+            "// void CMainWnd::OnContextMenu(CWnd* pWnd, CPoint point)\n"
+            "//   CMenu menu; menu.CreatePopupMenu();\n"
+            "//   menu.AppendMenu(MF_STRING, IDM_ABOUT, \"关于\");\n"
+            "//   menu.AppendMenu(MF_SEPARATOR, 0, NULL);\n"
+            "//   menu.AppendMenu(MF_STRING, IDM_QUIT, \"退出\");\n"
+            "//   menu.TrackPopupMenu(TPM_RIGHTBUTTON, point.x, point.y, this);\n"
+            "// void CMainWnd::OnAbout()  -> MessageBox\n"
+            "// void CMainWnd::OnQuit()   -> PostMessage(WM_CLOSE)\n"
+            "// ===========================================================\n"
+            + _APP_TAIL
+        ),
+        solution=(
+            "#include <afxwin.h>\n"
+            "\n"
+            "#define IDM_ABOUT 6001\n"
+            "#define IDM_QUIT  6002\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"快捷菜单练习\"); }\n"
+            "    afx_msg void OnContextMenu(CWnd* pWnd, CPoint point);\n"
+            "    afx_msg void OnAbout();\n"
+            "    afx_msg void OnQuit();\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "    ON_WM_CONTEXTMENU()\n"
+            "    ON_COMMAND(IDM_ABOUT, &CMainWnd::OnAbout)\n"
+            "    ON_COMMAND(IDM_QUIT, &CMainWnd::OnQuit)\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "void CMainWnd::OnContextMenu(CWnd* /*pWnd*/, CPoint point)\n"
+            "{\n"
+            "    CMenu menu;\n"
+            "    menu.CreatePopupMenu();                 // 动态建弹出菜单\n"
+            "    menu.AppendMenu(MF_STRING, IDM_ABOUT, \"关于\");\n"
+            "    menu.AppendMenu(MF_SEPARATOR, 0, NULL);\n"
+            "    menu.AppendMenu(MF_STRING, IDM_QUIT, \"退出\");\n"
+            "    menu.TrackPopupMenu(TPM_RIGHTBUTTON, point.x, point.y, this);\n"
+            "    // point 本身就是屏幕坐标, 直接使用\n"
+            "}\n"
+            "\n"
+            "void CMainWnd::OnAbout()\n"
+            "{\n"
+            "    MessageBox(\"这是右键菜单里的‘关于’\", \"提示\", MB_OK);\n"
+            "}\n"
+            "\n"
+            "void CMainWnd::OnQuit()\n"
+            "{\n"
+            "    PostMessage(WM_CLOSE);\n"
+            "}\n"
+            + _APP_TAIL
+        ),
+        checks=[
+            {"pattern": r"\bON_WM_CONTEXTMENU\b", "hint": "消息映射表里要有 ON_WM_CONTEXTMENU()"},
+            {"pattern": r"\bOnContextMenu\b", "hint": "要实现 OnContextMenu 处理函数"},
+            {"pattern": r"\bCreatePopupMenu\s*\(|\bLoadMenu\s*\(", "hint": "要创建弹出菜单(CreatePopupMenu/LoadMenu)"},
+            {"pattern": r"\bTrackPopupMenu\s*\(", "hint": "用 TrackPopupMenu 弹出菜单"},
+            {"pattern": r"\bTPM_RIGHTBUTTON\b", "hint": "TrackPopupMenu 用 TPM_RIGHTBUTTON 标志"},
+            {"pattern": r"\bON_COMMAND\s*\(", "hint": "菜单项用 ON_COMMAND 响应"},
+        ],
+    ),
+    # ---------------------------------------------------------------- v17
+    _p(
+        id="v17",
+        slug="multimedia-sound",
+        title="多媒体：播放声音（教材第 8 章）",
+        topics=["多媒体", "音频"],
+        framework="mfc",
+        subsystem="windows",
+        libs=["winmm.lib"],
+        desc=(
+            "教材第 8 章: 最简单的音频播放是 PlaySound —— 一行代码异步播放 wav; "
+            "播放、停止都用它; 更复杂的控制(定位/循环/更多格式)用 MCI 的 mciSendString。"
+            "本题用左右键/按键演示播放与停止(播放系统声音别名, 不需要音频文件)。"
+        ),
+        require=[
+            "在文件顶部用 #pragma comment(lib, \"winmm.lib\") 链接多媒体库(或工程里加 winmm.lib)。",
+            "鼠标左键按下(OnLButtonDown)时用 PlaySound 播放: PlaySound(\"SystemStart\", NULL, SND_ALIAS | SND_ASYNC)。",
+            "按 Esc(OnKeyDown 里判断 VK_ESCAPE)时用 PlaySound(NULL, NULL, SND_PURGE) 停止播放。",
+            "在注释里写出播放真实音频文件的写法: PlaySound(路径, NULL, SND_FILENAME | SND_ASYNC)。",
+            "两个处理函数都要在消息映射表里挂上(ON_WM_LBUTTONDOWN / ON_WM_KEYDOWN)。",
+        ],
+        io="图形界面程序: 左键点击播放系统声音, 按 Esc 停止。",
+        hints=[
+            "SND_ASYNC 是异步播放(不卡住界面); SND_SYNC 会阻塞, 长音频千万别用。",
+            "SND_ALIAS 表示「第一个参数是系统声音别名」(如 SystemStart/SystemAsterisk), 不需要文件。",
+            "忘了链接 winmm.lib 会报 LNK2019: unresolved external symbol PlaySound。",
+        ],
+        checklist=[
+            "#pragma comment(lib, \"winmm.lib\") 写了吗?",
+            "用的是 SND_ASYNC 吗?",
+            "停止用 SND_PURGE 了吗?",
+        ],
+        skeleton=(
+            "#include <afxwin.h>\n"
+            "// TODO: #pragma comment(lib, \"winmm.lib\")\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"多媒体练习\"); }\n"
+            "    // TODO: 声明 OnLButtonDown(UINT, CPoint) 与 OnKeyDown(UINT, UINT, UINT)\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "    // TODO: ON_WM_LBUTTONDOWN() 与 ON_WM_KEYDOWN()\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "// ================== TODO: 按教材第 8 章完成 ==================\n"
+            "// OnLButtonDown: PlaySound(\"SystemStart\", NULL, SND_ALIAS | SND_ASYNC);\n"
+            "// OnKeyDown:     if (nChar == VK_ESCAPE) PlaySound(NULL, NULL, SND_PURGE);\n"
+            "//                (记得 CFrameWnd::OnKeyDown(...) 交回基类)\n"
+            "// =========================================================\n"
+            + _APP_TAIL
+        ),
+        solution=(
+            "#include <afxwin.h>\n"
+            "#pragma comment(lib, \"winmm.lib\")      // 多媒体函数(PlaySound/mciSendString)所在库\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"多媒体练习\"); }\n"
+            "    afx_msg void OnLButtonDown(UINT nFlags, CPoint point);\n"
+            "    afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "    ON_WM_LBUTTONDOWN()\n"
+            "    ON_WM_KEYDOWN()\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "void CMainWnd::OnLButtonDown(UINT nFlags, CPoint point)\n"
+            "{\n"
+            "    // 播放系统声音(不需要音频文件):\n"
+            "    PlaySound(\"SystemStart\", NULL, SND_ALIAS | SND_ASYNC);\n"
+            "    // 播放真实文件时这样写:\n"
+            "    // PlaySound(\"C:\\\\music\\\\bgm.wav\", NULL, SND_FILENAME | SND_ASYNC);\n"
+            "    CFrameWnd::OnLButtonDown(nFlags, point);\n"
+            "}\n"
+            "\n"
+            "void CMainWnd::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)\n"
+            "{\n"
+            "    if (nChar == VK_ESCAPE)\n"
+            "        PlaySound(NULL, NULL, SND_PURGE);   // 停止当前播放\n"
+            "    CFrameWnd::OnKeyDown(nChar, nRepCnt, nFlags);\n"
+            "}\n"
+            + _APP_TAIL
+        ),
+        checks=[
+            {"pattern": r"\bPlaySound\s*\(", "hint": "用 PlaySound 播放声音"},
+            {"pattern": r"\bSND_ASYNC\b", "hint": "用 SND_ASYNC 异步播放(不卡界面)"},
+            {"pattern": r"\bSND_PURGE\b", "hint": "用 SND_PURGE 停止播放"},
+            {"pattern": r"winmm\.lib", "hint": "要链接 winmm.lib(否则 LNK2019)"},
+            {"pattern": r"\bSND_FILENAME\b", "hint": "注释里给出播放文件的写法(SND_FILENAME)", "required": False},
+            {"pattern": r"\bmciSendString\b", "hint": "进阶: 也可用 MCI 的 mciSendString", "required": False},
+        ],
+    ),
+    # ---------------------------------------------------------------- v18
+    _p(
+        id="v18",
+        slug="toolbar-statusbar",
+        title="工具条与状态栏（教材 7.5）",
+        topics=["工具条", "状态栏"],
+        framework="mfc",
+        subsystem="windows",
+        needs_resource=True,    # 工具条的按钮位图来自资源(IDR_MAINFRAME)
+        desc=(
+            "教材 7.5: 工具条(CToolBar)的按钮位图与状态栏(CStatusBar)的窗格都由资源定义 —— "
+            "CreateEx 创建、LoadToolBar 加载、SetIndicators 设置窗格。"
+            "工具条按钮和菜单共用命令 ID, 点击走的还是 ON_COMMAND。"
+            "(工具条需要位图资源, 纯 main.cpp 按要点检查评分。)"
+        ),
+        require=[
+            "主框架类里声明两个成员: CToolBar m_toolbar; 与 CStatusBar m_status;。",
+            "在 OnCreate 里用 m_toolbar.CreateEx(this, TBSTYLE_FLAT, WS_CHILD | WS_VISIBLE | CBRS_TOP) 创建工具条。",
+            "用 m_toolbar.LoadToolBar(IDR_MAINFRAME) 加载工具条资源(位图在 .rc 里)。",
+            "用 m_status.Create(this) 创建状态栏, 再用 SetIndicators(indicators, 3) 设置窗格。",
+            "指示器数组里至少包含 ID_SEPARATOR 与两个状态窗格(如 ID_INDICATOR_CAPS / ID_INDICATOR_NUM)。",
+        ],
+        io="图形界面程序: 窗口顶部有工具条、底部有状态栏(窗格显示 Caps/Num 状态)。",
+        hints=[
+            "CBRS_TOP 让工具条停靠在窗口顶部; 其它常用值还有 CBRS_BOTTOM/CBRS_FLYBY。",
+            "工具条按钮的 ID 由 IDR_MAINFRAME 位图资源顺序决定, 与命令 ID 一一对应。",
+            "indicator 数组必须是 static 的(CStatusBar 内部会长期引用它)。",
+        ],
+        checklist=[
+            "CreateEx 的样式含 CBRS_TOP 与 WS_VISIBLE 吗?",
+            "LoadToolBar / SetIndicators 都调用了吗?",
+            "indicators 数组是 static 吗?",
+        ],
+        skeleton=(
+            "#include <afxwin.h>\n"
+            "#include \"resource.h\"      // IDR_MAINFRAME / ID_INDICATOR_* 在资源头文件里\n"
+            "\n"
+            "// ================== TODO: 按教材 7.5 补全主框架类 ==================\n"
+            "class CMainFrame : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainFrame() { Create(NULL, \"工具条与状态栏\"); }\n"
+            "    // TODO: 声明成员 CToolBar m_toolbar; CStatusBar m_status;\n"
+            "    // TODO: 声明并实现 afx_msg int OnCreate(LPCREATESTRUCT);\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "// BEGIN_MESSAGE_MAP 里记得 ON_WM_CREATE()\n"
+            "\n"
+            "// int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)\n"
+            "// {\n"
+            "//     if (CFrameWnd::OnCreate(lpCreateStruct) == -1) return -1;\n"
+            "//     TODO: 1) CreateEx 创建工具条\n"
+            "//     TODO: 2) LoadToolBar(IDR_MAINFRAME)\n"
+            "//     TODO: 3) m_status.Create(this) + SetIndicators(indicators, 3)\n"
+            "//     return 0;\n"
+            "// }\n"
+            "// ==================================================================\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "BOOL CMyApp::InitInstance()\n"
+            "{\n"
+            "    m_pMainWnd = new CMainFrame();\n"
+            "    m_pMainWnd->ShowWindow(SW_SHOW);\n"
+            "    m_pMainWnd->UpdateWindow();\n"
+            "    return TRUE;\n"
+            "}\n"
+            "CMyApp theApp;\n"
+        ),
+        solution=(
+            "#include <afxwin.h>\n"
+            "#include \"resource.h\"\n"
+            "\n"
+            "class CMainFrame : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainFrame() { Create(NULL, \"工具条与状态栏\"); }\n"
+            "    CToolBar m_toolbar;                 // 工具条\n"
+            "    CStatusBar m_status;                // 状态栏\n"
+            "    afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)\n"
+            "    ON_WM_CREATE()\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)\n"
+            "{\n"
+            "    if (CFrameWnd::OnCreate(lpCreateStruct) == -1) return -1;\n"
+            "\n"
+            "    m_toolbar.CreateEx(this, TBSTYLE_FLAT,\n"
+            "                       WS_CHILD | WS_VISIBLE | CBRS_TOP);\n"
+            "    m_toolbar.LoadToolBar(IDR_MAINFRAME);       // 按钮位图来自资源\n"
+            "\n"
+            "    m_status.Create(this);\n"
+            "    static UINT indicators[] = {\n"
+            "        ID_SEPARATOR, ID_INDICATOR_CAPS, ID_INDICATOR_NUM\n"
+            "    };\n"
+            "    m_status.SetIndicators(indicators, 3);\n"
+            "    return 0;\n"
+            "}\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "BOOL CMyApp::InitInstance()\n"
+            "{\n"
+            "    m_pMainWnd = new CMainFrame();\n"
+            "    m_pMainWnd->ShowWindow(SW_SHOW);\n"
+            "    m_pMainWnd->UpdateWindow();\n"
+            "    return TRUE;\n"
+            "}\n"
+            "CMyApp theApp;\n"
+        ),
+        checks=[
+            {"pattern": r"\bCToolBar\b", "hint": "要用 CToolBar 工具条类"},
+            {"pattern": r"\bLoadToolBar\s*\(|\bLoadBitmap\s*\(", "hint": "用 LoadToolBar 加载工具条资源"},
+            {"pattern": r"\bCreateEx\s*\(", "hint": "用 CreateEx 创建工具条并指定停靠样式"},
+            {"pattern": r"\bCBRS_TOP\b", "hint": "工具条停靠样式用 CBRS_TOP"},
+            {"pattern": r"\bCStatusBar\b", "hint": "要用 CStatusBar 状态栏类"},
+            {"pattern": r"\bSetIndicators\s*\(", "hint": "用 SetIndicators 设置状态栏窗格"},
+        ],
+    ),
 ]
