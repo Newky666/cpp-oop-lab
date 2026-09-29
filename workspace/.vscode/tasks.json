@@ -1,0 +1,113 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "构建当前文件",
+      "type": "shell",
+      "command": "${workspaceFolder}\\build.bat",
+      "args": [
+        "${file}"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "编译当前打开的 .cpp 到 <题目目录>/build/<名字>.exe"
+    },
+    {
+      "label": "运行当前题 · 用例 1",
+      "type": "shell",
+      "command": "${workspaceFolder}\\run_case.bat",
+      "args": [
+        "${fileDirname}",
+        "1"
+      ],
+      "dependsOn": "构建当前文件",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "test",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "用 tests/01.in 作为输入运行当前题目"
+    },
+    {
+      "label": "运行当前题 · 用例 2",
+      "type": "shell",
+      "command": "${workspaceFolder}\\run_case.bat",
+      "args": [
+        "${fileDirname}",
+        "2"
+      ],
+      "dependsOn": "构建当前文件",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "test",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "用 tests/02.in 作为输入运行当前题目"
+    },
+    {
+      "label": "运行当前题 · 用例 3",
+      "type": "shell",
+      "command": "${workspaceFolder}\\run_case.bat",
+      "args": [
+        "${fileDirname}",
+        "3"
+      ],
+      "dependsOn": "构建当前文件",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "test",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "用 tests/03.in 作为输入运行当前题目"
+    },
+    {
+      "label": "运行当前题 · 用例 4",
+      "type": "shell",
+      "command": "${workspaceFolder}\\run_case.bat",
+      "args": [
+        "${fileDirname}",
+        "4"
+      ],
+      "dependsOn": "构建当前文件",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "test",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "用 tests/04.in 作为输入运行当前题目"
+    }
+  ]
+}

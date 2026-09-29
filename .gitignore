@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+*.log
+
+# 练习进度与在线导入的题目(本机数据)
+data/
+
+# 编译产物
+workspace/**/build/
+workspace/**/*.obj
+workspace/**/*.exe
+workspace/**/*.pdb
+workspace/**/*.ilk
+
+# 生成的提交包(每次 submit 都会重写)
+workspace/**/submission.md
+
+# 打包产物(PyInstaller: 中间目录 / 单文件 exe / 自动生成的 spec)
+build/
+dist/
+*.spec

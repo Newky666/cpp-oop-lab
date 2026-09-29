@@ -1,0 +1,9 @@
+# 编译产物(你的 main.cpp / 讲义 / 用例都会被正常跟踪)
+**/build/
+*.obj
+*.exe
+*.pdb
+*.ilk
+*.idb
+.vs/
+**/submission.md
