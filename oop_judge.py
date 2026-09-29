@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 import time
@@ -38,6 +39,10 @@ VERDICT_TEXT = {
     "TLE": ("运行超时", "yellow"),
     "SKIP": ("无自动用例", "yellow"),
     "NA": ("未评测", "grey"),
+    # 编译验证型(教材第 2~8 章的 MFC 题, 没有控制台用例)
+    "COMPILED": ("编译通过", "green"),
+    "STATIC": ("静态检查通过", "yellow"),
+    "CHECK_FAIL": ("要点未达标", "red"),
 }
 
 
@@ -252,6 +257,116 @@ def find_toolchain(prefer: Optional[str] = None) -> Optional[Toolchain]:
 
 
 # ---------------------------------------------------------------------------
+# MFC / Windows 可视化题目支持(教材第 2~8 章)
+# ---------------------------------------------------------------------------
+MFC_INSTALL_HINT = ("VS Installer → 修改 → 单个组件 → 勾选「适用于最新 v143 生成工具的 "
+                    "C++ MFC(x86 和 x64)」后重新打开终端")
+
+
+def detect_mfc() -> Optional[str]:
+    """找 MFC 头文件 afxwin.h: 装了返回路径, 没装返回 None。
+
+    教材(黄维通《Visual C++面向对象与可视化程序设计》第 5 版)第 2~8 章全部基于 MFC,
+    这是「可视化题目能不能真编译」的前提。
+    """
+    root = vs_root()
+    if not root:
+        return None
+    tools = os.path.join(root, "VC", "Tools", "MSVC")
+    if not os.path.isdir(tools):
+        return None
+    try:
+        versions = sorted(os.listdir(tools), reverse=True)
+    except OSError:
+        return None
+    for version in versions:
+        header = os.path.join(tools, version, "atlmfc", "include", "afxwin.h")
+        if os.path.isfile(header):
+            return header
+    return None
+
+
+def extra_compile_args(problem: Optional[Dict[str, Any]]) -> List[str]:
+    """按题目声明拼 MSVC 的额外编译参数(框架宏 + 题目自定义 defines)。"""
+    problem = problem or {}
+    framework = str(problem.get("framework") or "console").lower()
+    args: List[str] = []
+    if framework == "mfc":
+        # /D_AFXDLL = 动态链接 MFC(配 /MD); 刻意不强制 UNICODE ——
+        # 教材示例大量直接写 "字符串字面量", 强制 UNICODE 会让它们编不过。
+        args += ["/D_AFXDLL", "/DWIN32", "/D_WINDOWS", "/MD"]
+    args += ["/D" + str(item) for item in problem.get("defines") or []]
+    return args
+
+
+def extra_link_args(problem: Optional[Dict[str, Any]]) -> str:
+    """按题目声明拼 MSVC 的链接参数(子系统 + 库); 没有就返回空串。"""
+    problem = problem or {}
+    framework = str(problem.get("framework") or "console").lower()
+    subsystem = str(problem.get("subsystem")
+                    or ("windows" if framework == "mfc" else "")).lower()
+    libs = [str(item) for item in problem.get("libs") or []]
+    parts: List[str] = []
+    if subsystem in ("windows", "console"):
+        parts.append("/SUBSYSTEM:" + subsystem.upper())
+        if subsystem == "windows":
+            libs += ["user32.lib", "gdi32.lib"]
+    if not parts and not libs:
+        return ""
+    return " ".join(["/link"] + parts + libs)
+
+
+class CheckResult:
+    """一条静态检查规则的结果(教材类题目没有控制台用例, 靠这些规则把关要点)。"""
+
+    def __init__(self, pattern: str, hint: str, ok: bool, required: bool = True) -> None:
+        self.pattern = pattern
+        self.hint = hint
+        self.ok = ok
+        self.required = required
+
+
+def run_checks(source_text: str, checks: Optional[List[Dict[str, Any]]]) -> List[CheckResult]:
+    """逐条跑题目的静态检查规则(正则匹配学生源码)。纯函数, 可单测。"""
+    results: List[CheckResult] = []
+    for item in checks or []:
+        if not isinstance(item, dict):
+            continue
+        pattern = str(item.get("pattern") or "")
+        hint = str(item.get("hint") or "")
+        required = bool(item.get("required", True))
+        ok = False
+        if not pattern:
+            hint = hint or "规则缺少 pattern"
+        else:
+            try:
+                ok = re.search(pattern, source_text or "") is not None
+            except re.error as exc:
+                hint = "正则非法: %s" % exc
+        results.append(CheckResult(pattern, hint, ok, required))
+    return results
+
+
+def render_checks(results: List[CheckResult]) -> List[str]:
+    """把静态检查结果渲染成报告行。"""
+    if not results:
+        return []
+    lines = ["", oc.color("要点检查(对照题目要求):", "bold")]
+    for index, item in enumerate(results, start=1):
+        if item.ok:
+            mark = oc.color("[OK]", "green")
+        elif item.required:
+            mark = oc.color("[X ]", "red")
+        else:
+            mark = oc.color("[--]", "grey")
+        text = item.hint or item.pattern
+        if not item.ok and not item.required:
+            text += "(可选项, 未做到不影响通过)"
+        lines.append("  %s %d. %s" % (mark, index, text))
+    return lines
+
+
+# ---------------------------------------------------------------------------
 # 编译
 # ---------------------------------------------------------------------------
 class CompileResult:
@@ -270,17 +385,23 @@ _MSVC_BAT = (
     "set VSLANG=1033\r\n"
     'call "{vcvars}" >nul 2>&1\r\n'
     'if errorlevel 1 echo [oop_lab] 调用 vcvars64.bat 失败: {vcvars}\r\n'
-    'cl /nologo /utf-8 /EHsc /std:{std} /W3 /I"{srcdir}" /Fe:"{exe}" "{src}"\r\n'
+    'cl /nologo /utf-8 /EHsc /std:{std} /W3 /I"{srcdir}" {extra} /Fe:"{exe}" "{src}" {link}\r\n'
     "exit /b %ERRORLEVEL%\r\n"
 )
 
 
 def compile_file(toolchain: Toolchain, source_path: str, build_dir: str,
-                 std: str = DEFAULT_STD, timeout: float = COMPILE_TIMEOUT) -> CompileResult:
-    """编译单个 .cpp, 产物放到 build_dir/main.exe。"""
+                 std: str = DEFAULT_STD, timeout: float = COMPILE_TIMEOUT,
+                 problem: Optional[Dict[str, Any]] = None) -> CompileResult:
+    """编译单个 .cpp, 产物放到 build_dir/main.exe。
+
+    problem 不为空时按题目声明追加参数(framework/defines/libs/subsystem):
+    MFC 题需要 /D_AFXDLL 与 /SUBSYSTEM:WINDOWS, 这些都在 extra_* 里拼。
+    """
     src = os.path.abspath(source_path)
     if not os.path.isfile(src):
         return CompileResult(False, log="找不到源文件: %s" % src)
+    framework = str((problem or {}).get("framework") or "console").lower()
     oc.ensure_dir(build_dir)
     build_dir = os.path.abspath(build_dir)
     exe = os.path.join(build_dir, EXE_NAME)
@@ -289,12 +410,19 @@ def compile_file(toolchain: Toolchain, source_path: str, build_dir: str,
     try:
         if toolchain.is_msvc:
             bat_path = os.path.join(build_dir, "_oop_build.bat")
-            script = _MSVC_BAT.format(vcvars=toolchain.vcvars or "", std=std,
-                                      srcdir=os.path.dirname(src), exe=exe, src=src)
+            script = _MSVC_BAT.format(
+                vcvars=toolchain.vcvars or "", std=std,
+                srcdir=os.path.dirname(src), exe=exe, src=src,
+                extra=" ".join(extra_compile_args(problem)),
+                link=extra_link_args(problem))
             with open(bat_path, "w", encoding="utf-8", newline="") as fh:
                 fh.write(script)
             command = [os.environ.get("COMSPEC", "cmd.exe"), "/c", bat_path]
         else:
+            if framework == "mfc":
+                return CompileResult(
+                    False, log="这道题是 MFC 可视化题, 需要 MSVC(cl.exe); 当前编译器是 %s"
+                               " —— 先跑 py oop_lab.py doctor 看安装建议" % toolchain.label)
             extra: List[str] = []
             if toolchain.kind in ("g++", "clang++"):
                 extra = ["-std=" + std, "-O0", "-g", "-Wall", "-Wextra"]
@@ -316,7 +444,8 @@ def compile_file(toolchain: Toolchain, source_path: str, build_dir: str,
 
 
 def compile_text(toolchain: Toolchain, source_text: str, work_dir: str,
-                 std: str = DEFAULT_STD, file_name: str = "main.cpp") -> CompileResult:
+                 std: str = DEFAULT_STD, file_name: str = "main.cpp",
+                 problem: Optional[Dict[str, Any]] = None) -> CompileResult:
     """先落盘再编译(给 selftest 用: 把参考解写进临时目录)。"""
     oc.ensure_dir(work_dir)
     path = os.path.join(work_dir, file_name)
@@ -325,7 +454,8 @@ def compile_text(toolchain: Toolchain, source_text: str, work_dir: str,
             fh.write(source_text.replace("\r\n", "\n"))
     except OSError as exc:
         return CompileResult(False, log="写入源文件失败: %s" % exc)
-    return compile_file(toolchain, path, os.path.join(work_dir, "build"), std=std)
+    return compile_file(toolchain, path, os.path.join(work_dir, "build"), std=std,
+                        problem=problem)
 
 
 # ---------------------------------------------------------------------------
@@ -433,6 +563,8 @@ class JudgeReport:
         self.cases: List[CaseResult] = []
         self.seconds = 0.0
         self.source_path = ""
+        self.checks: List[CheckResult] = []      # 静态检查结果(教材类题目)
+        self.static_only = False                 # True: 未真编译(缺 MFC), 只看静态检查
 
     @property
     def total(self) -> int:
@@ -443,11 +575,19 @@ class JudgeReport:
         return sum(1 for c in self.cases if c.ok)
 
     @property
+    def checks_passed(self) -> bool:
+        required = [c for c in self.checks if c.required]
+        return bool(required) and all(c.ok for c in required)
+
+    @property
     def verdict(self) -> str:
+        if self.static_only:
+            return "STATIC" if self.checks_passed else "CHECK_FAIL"
         if not self.compiled:
             return "CE"
         if not self.cases:
-            return "SKIP"
+            # 编译验证型(GUI/MFC 题): 编译通过; 有 checks 时它们决定成败
+            return "COMPILED" if (not self.checks or self.checks_passed) else "CHECK_FAIL"
         for case in self.cases:
             if case.verdict != "AC":
                 return case.verdict
@@ -455,7 +595,11 @@ class JudgeReport:
 
     @property
     def all_passed(self) -> bool:
-        return self.compiled and bool(self.cases) and self.passed == self.total
+        if self.static_only:
+            return self.checks_passed
+        if not (self.compiled and bool(self.cases) and self.passed == self.total):
+            return False
+        return not self.checks or self.checks_passed
 
     def failures(self) -> List[CaseResult]:
         return [c for c in self.cases if not c.ok]
@@ -463,26 +607,48 @@ class JudgeReport:
 
 def judge(problem: Dict[str, Any], source_path: str, toolchain: Optional[Toolchain] = None,
           timeout: float = DEFAULT_TIMEOUT, build_dir: Optional[str] = None) -> JudgeReport:
-    """编译学生代码并跑完题库里全部用例。"""
+    """编译学生代码并跑完题库里全部用例; MFC 题在没有 MFC 组件时降级为静态检查。"""
     report = JudgeReport()
     report.source_path = os.path.abspath(source_path)
+    started = time.time()
+
+    source_text = ""
+    try:
+        with open(report.source_path, encoding="utf-8", errors="replace") as fh:
+            source_text = fh.read()
+    except OSError:
+        source_text = ""
+    report.checks = run_checks(source_text, problem.get("checks"))
+
+    framework = str(problem.get("framework") or "console").lower()
+    if framework == "mfc" and detect_mfc() is None:
+        # 没装 MFC: 编译不了, 改为「要点检查」并在报告里给出安装路径
+        report.static_only = True
+        report.toolchain_label = "未编译(缺 MFC 组件)"
+        report.seconds = time.time() - started
+        return report
+
     chain = toolchain or find_toolchain()
     if chain is None:
         report.compile_log = "没有找到可用的 C++ 编译器"
+        report.seconds = time.time() - started
         return report
     report.toolchain_label = chain.label
 
     target_build = build_dir or os.path.join(os.path.dirname(report.source_path), "build")
-    started = time.time()
-    compiled = compile_file(chain, report.source_path, target_build, timeout=COMPILE_TIMEOUT)
+    compiled = compile_file(chain, report.source_path, target_build,
+                            timeout=COMPILE_TIMEOUT, problem=problem)
     report.compiled = compiled.ok
     report.compile_log = compiled.log
     report.compile_seconds = compiled.seconds
+    report.seconds = time.time() - started
     if not compiled.ok:
-        report.seconds = time.time() - started
         return report
 
     tests = problem.get("tests") or []
+    if not tests:
+        # 编译验证型(MFC / 窗口程序没有控制台用例): 编译通过即完成, checks 决定成败
+        return report
     for index, test in enumerate(tests, start=1):
         expected = test.get("out", "")
         run = run_binary(compiled.exe, test.get("in", ""), timeout=timeout,
@@ -527,7 +693,15 @@ def verify_solution(problem: Dict[str, Any], toolchain: Optional[Toolchain] = No
     if not solution.strip():
         report.compile_log = "本题没有参考解"
         return report
-    compiled = compile_text(chain, solution, tmp)
+    # MFC 题: 没装 MFC 组件时无法真编译, 明确跳过(selftest 汇总里单独统计);
+    # 但参考解仍要过一遍 checks —— 规则本身写错了要能当场发现。
+    framework = str(problem.get("framework") or "console").lower()
+    if framework == "mfc" and detect_mfc() is None:
+        report.static_only = True
+        report.checks = run_checks(solution, problem.get("checks"))
+        report.compile_log = "跳过: 未安装 MFC 组件——" + MFC_INSTALL_HINT
+        return report
+    compiled = compile_text(chain, solution, tmp, problem=problem)
     report.compiled = compiled.ok
     report.compile_log = compiled.log
     report.compile_seconds = compiled.seconds
@@ -571,6 +745,16 @@ def render_report(report: JudgeReport, max_diff: int = 3,
     lines.append("编译器: %s" % (report.toolchain_label or "无"))
     lines.append("编译耗时: %s" % oc.human_duration(report.compile_seconds))
 
+    if report.static_only:
+        lines.append("")
+        lines.append(oc.color("未安装 MFC 组件, 本次跳过编译 —— 只做要点检查。", "yellow"))
+        lines.append("     · 安装后可真编译: " + MFC_INSTALL_HINT)
+        if report.checks:
+            lines.extend(render_checks(report.checks))
+        else:
+            lines.append("     · 本题没有检查规则, 请对照题目要求自己核对。")
+        return lines
+
     if not report.compiled:
         lines.append("")
         lines.append(oc.color("编译失败(CE)", "red") + " —— 先修好编译错误再提交:")
@@ -578,10 +762,16 @@ def render_report(report: JudgeReport, max_diff: int = 3,
         for row in (report.compile_log or "(编译器没有输出)").splitlines()[:40]:
             lines.append("  " + row)
         lines.append(oc.hr("-", 72))
+        lines.extend(render_checks(report.checks))
         return lines
 
     if not report.cases:
-        lines.append(oc.color("本题没有自动评测用例, 请看题目要求自行验证。", "yellow"))
+        lines.append("")
+        if report.checks:
+            lines.append(oc.color("编译通过。本题没有控制台用例, 以下是要点检查:", "yellow"))
+            lines.extend(render_checks(report.checks))
+        else:
+            lines.append(oc.color("编译通过。本题没有自动评测用例, 请按题目要求自行验证。", "yellow"))
         return lines
 
     lines.append("")
@@ -665,6 +855,18 @@ def doctor(verbose: bool = True) -> Tuple[bool, List[str]]:
         lines.append("%s 没找到 Visual Studio(devenv.exe) —— 只用 VSCode 的话可以忽略"
                      % oc.color("[--]", "grey"))
     lines.append("     练习工作区同时带 VSCode 配置(.vscode)和 VS 解决方案(oop_lab.sln), 两边都能 F5")
+
+    lines.append("")
+    lines.append(oc.color("== MFC 可视化支持(教材第 2~8 章) ==", "bold"))
+    mfc = detect_mfc()
+    if mfc:
+        lines.append("%s MFC 可用: %s" % (oc.color("[OK]", "green"), mfc))
+        lines.append("     · 第 2~8 章的 MFC 题目可以直接真编译验证")
+    else:
+        lines.append("%s 未安装 MFC 组件 —— MFC 题目只做要点检查, 不能真编译"
+                     % oc.color("[!]", "yellow"))
+        lines.append("     · 安装方法: " + MFC_INSTALL_HINT)
+        lines.append("     · 装好后重开终端再跑一次 doctor 确认即可")
 
     return ok, lines
 

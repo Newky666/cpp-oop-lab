@@ -123,8 +123,10 @@ def cmd_overview(args: argparse.Namespace) -> int:
     print("总进度  %s  %d/%d" % (_progress_bar(len(passed), len(order)), len(passed), len(order)))
 
     counts = oop_bank.level_counts()
-    for level in (1, 2, 3):
+    for level in sorted(oc.LEVEL_NAMES):
         total = counts.get(level, 0)
+        if not total:
+            continue
         done = sum(1 for pid in order
                    if store.status(pid) == "passed"
                    and int(oop_bank.find(pid)["level"]) == level)
@@ -686,9 +688,12 @@ def cmd_skills(args: argparse.Namespace) -> int:
     if not args.id:
         print(oc.color("面向对象知识点图谱(%d 个)" % len(oop_skills.SKILLS), "bold"))
         print(oc.hr("-", 78))
-        for level in (1, 2, 3):
+        for level in sorted(oc.LEVEL_NAMES):
+            items = oop_skills.skills_by_level(level)
+            if not items:
+                continue
             print(oc.color("第 %d 档 · %s" % (level, oc.LEVEL_NAMES.get(level, "")), "cyan"))
-            for item in oop_skills.skills_by_level(level):
+            for item in items:
                 print("  %s %s %s" % (
                     item["id"], oc.pad_end(item["name"], 22),
                     oc.color(oc.truncate(item["summary"], 40), "grey")))
@@ -979,8 +984,17 @@ def cmd_selftest(args: argparse.Namespace) -> int:
     print(oc.hr("-", 78))
 
     failed: List[str] = []
+    skipped: List[str] = []
     for problem in problems:
         report = oop_judge.verify_solution(problem, chain)
+        if report.static_only and report.checks_passed:
+            # 缺 MFC 组件: 跳过真编译, 但参考解已通过要点检查, 不算失败
+            skipped.append(problem["id"])
+            print("  %s %-5s %-34s %s" % (
+                oc.color("SKIP", "yellow"), problem["id"],
+                oc.truncate(problem["title"], 34),
+                oc.color("未装 MFC 组件, 要点检查通过", "grey")))
+            continue
         mark = oc.color("OK ", "green") if report.all_passed else oc.color("BAD", "red")
         print("  %s %-5s %-34s %d/%d  %s" % (
             mark, problem["id"], oc.truncate(problem["title"], 34),
@@ -994,7 +1008,10 @@ def cmd_selftest(args: argparse.Namespace) -> int:
     if failed:
         print(oc.color("有 %d 题的参考解或答案有问题: %s" % (len(failed), ", ".join(failed)), "red"))
         return 1
-    print(oc.color("全部 %d 题的参考解都能通过各自的用例。题库是干净的。" % len(problems), "green"))
+    message = "全部 %d 题的参考解都能通过各自的用例。题库是干净的。" % (len(problems) - len(skipped))
+    if skipped:
+        message += " (%d 题因未装 MFC 组件跳过: %s)" % (len(skipped), ", ".join(skipped))
+    print(oc.color(message, "green"))
     return 0
 
 

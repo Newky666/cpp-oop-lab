@@ -482,6 +482,172 @@ SKILLS: List[Dict[str, Any]] = [
         ),
         "check": "这个关系是“是”还是“有”? 如果是“有”, 我为什么还要把它写成继承?",
     },
+    # ------------------------------------------------------------- 第 4 档
+    # 教材(黄维通《Visual C++面向对象与可视化程序设计》第 5 版)第 2~8 章的
+    # 可视化程序设计知识点。全部基于 MFC(第 2~8 章) —— 讲义里的示例都带完整头文件。
+    {
+        "id": "K18", "level": 4, "name": "Windows 编程基础与消息机制",
+        "keywords": ["Windows编程", "窗口句柄", "HWND", "消息循环", "消息机制",
+                     "WM_PAINT", "窗口类", "句柄", "消息驱动"],
+        "summary": "Windows 程序是“消息驱动”的: 系统把用户操作变成消息投递给窗口, 你写处理函数响应它。",
+        "points": [
+            "几乎所有 Windows 对象在 API 层都是句柄: 窗口 HWND、设备环境 HDC、画笔 HPEN、画刷 HBRUSH —— 句柄是不透明整数, 用完要还。",
+            "经典消息循环三件套: GetMessage 取消息 → TranslateMessage 处理键盘 → DispatchMessage 派发给窗口过程。",
+            "一条消息有三个要素: hwnd(发给哪个窗口)、message(WM_ 开头的编号)、wParam/lParam(附加参数)。",
+            "MFC 把“消息 → 处理函数”的对应关系写进消息映射表(见 K33), 你不再手写 window procedure 的 switch。",
+            "重绘消息 WM_PAINT 是“必须处理”的消息: 窗口被遮挡/最小化恢复后, 系统靠它让你重画内容。",
+        ],
+        "pitfalls": [
+            "没处理的消息忘了交给默认窗口过程(API 里是 DefWindowProc) —— 窗口会拖不动、关不掉;",
+            "把绘制逻辑写在别处、WM_PAINT 里什么都不做 —— 窗口被遮挡再露出来就一片空白;",
+            "记混参数位置: 鼠标坐标在 lParam(低 16 位 x、高 16 位 y), 键码在 wParam。",
+        ],
+        "example": (
+            "// MFC 里“消息 → 处理函数”靠消息映射表(完整可编译的骨架见 K33)\n"
+            "BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)\n"
+            "    ON_WM_PAINT()                       // WM_PAINT -> OnPaint\n"
+            "    ON_WM_LBUTTONDOWN()                 // 左键按下 -> OnLButtonDown\n"
+            "END_MESSAGE_MAP()"
+        ),
+        "check": "窗口被别的窗口挡住、再露出来时, 你的内容还能自动重画吗?(重绘逻辑在 OnPaint 里吗)",
+    },
+    {
+        "id": "K19", "level": 4, "name": "设备环境与 GDI 绘图",
+        "keywords": ["设备环境", "CDC", "CPaintDC", "CClientDC", "GDI", "绘图",
+                     "画笔", "画刷", "CPen", "CBrush", "SelectObject", "映像模式", "RGB"],
+        "summary": "所有绘图都必须通过“设备环境”(DC)进行; 画笔管线条, 画刷管填充。",
+        "points": [
+            "取 DC 的几种方式: OnPaint 里用 CPaintDC(构造自动 BeginPaint、析构自动 EndPaint); 想在别处随时画用 CClientDC; OnDraw 里直接用参数里的 CDC*。",
+            "画笔 CPen 负责画线/画边框, 画刷 CBrush 负责填充; 创建后必须 SelectObject 选进 DC 才生效。",
+            "颜色用宏 RGB(红, 绿, 蓝), 每个分量 0~255; 红色是 RGB(255, 0, 0)。",
+            "使用自定义 GDI 对象的完整套路: 创建 → 选进 DC 并保存旧对象 → 绘制 → 把旧对象选回去 → 让新对象析构。",
+            "默认映像模式 MM_TEXT: 坐标单位是像素, 原点在客户区左上角, x 向右、y 向下。",
+        ],
+        "pitfalls": [
+            "只创建了 CPen 却没 SelectObject —— 画的还是默认黑笔, 看起来“没生效”;",
+            "用完不把旧 GDI 对象选回去 —— 画笔析构时还选在 DC 里会造成 GDI 资源泄漏(画几百次就卡);",
+            "在 OnPaint 之外用 CPaintDC —— 会触发断言/死锁, 那个 DC 只能在 WM_PAINT 期间存在。",
+        ],
+        "example": (
+            "#include <afxwin.h>\n"
+            "// 在 OnPaint 里画一条红色粗线\n"
+            "void CMyView::OnPaint()\n"
+            "{\n"
+            "    CPaintDC dc(this);                    // 绑定 WM_PAINT 的设备环境\n"
+            "    CPen pen(PS_SOLID, 3, RGB(255, 0, 0));   // 3 像素宽的红色实线画笔\n"
+            "    CPen* oldPen = dc.SelectObject(&pen);    // 选进 DC, 保存旧笔\n"
+            "    dc.MoveTo(10, 10);\n"
+            "    dc.LineTo(300, 200);\n"
+            "    dc.SelectObject(oldPen);                 // 用完恢复, 防 GDI 泄漏\n"
+            "}"
+        ),
+        "check": "我创建的画笔/画刷选进 DC 了吗? 用完把旧对象恢复回去了吗?",
+    },
+    {
+        "id": "K33", "level": 4, "name": "消息映射与 MFC 程序骨架",
+        "keywords": ["消息映射", "MFC程序结构", "CWinApp", "InitInstance",
+                     "BEGIN_MESSAGE_MAP", "DECLARE_MESSAGE_MAP", "afxwin", "MFC"],
+        "summary": "一个 MFC 程序 = 应用程序对象 + 主窗口 + 消息映射表; main 函数由 MFC 库替你写好了。",
+        "points": [
+            "全局唯一的 CWinApp 派生类对象就是“应用程序对象”: MFC 提供的入口会调用它的 InitInstance, 你在那里创建并显示主窗口。",
+            "消息映射三件套: 类声明里 DECLARE_MESSAGE_MAP()、实现文件里 BEGIN_MESSAGE_MAP/END_MESSAGE_MAP 包围的条目表、以及 afx_msg 前缀的处理函数。",
+            "处理函数的名字和签名是固定的: OnPaint、OnLButtonDown、OnKeyDown…… 写错签名能编译过但消息不会被派发到。",
+            "MFC 头文件是 <afxwin.h>(包含它就有了 CWinApp/CWnd/CDC 等); 类名习惯上以 C 开头。",
+            "InitInstance 返回 FALSE 表示“初始化失败, 直接退出程序”, 不是“跳过某个步骤”。",
+        ],
+        "pitfalls": [
+            "类声明里忘了 DECLARE_MESSAGE_MAP() —— 消息映射表接不上, 处理函数永远不被调用;",
+            "处理函数签名与教材不一致(比如 OnLButtonDown 少写了 UINT nFlags) —— 编译能过但收不到消息;",
+            "在 InitInstance 里忘记 m_pMainWnd = &wnd 或忘记 wnd.ShowWindow/SW_SHOW —— 窗口建了但不显示。",
+        ],
+        "example": (
+            "#include <afxwin.h>\n"
+            "class CMyApp : public CWinApp {          // 应用程序对象\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "class CMainWnd : public CFrameWnd {      // 主窗口\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"My First MFC\"); }\n"
+            "    afx_msg void OnPaint();\n"
+            "    DECLARE_MESSAGE_MAP()                // 消息映射声明(三件套之一)\n"
+            "};\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)   // 消息映射表(三件套之二)\n"
+            "    ON_WM_PAINT()\n"
+            "END_MESSAGE_MAP()\n"
+            "void CMainWnd::OnPaint() { CPaintDC dc(this); }\n"
+            "BOOL CMyApp::InitInstance() {\n"
+            "    CMainWnd* wnd = new CMainWnd();\n"
+            "    m_pMainWnd = wnd;\n"
+            "    wnd->ShowWindow(SW_SHOW);            // 不显示就什么都看不到\n"
+            "    wnd->UpdateWindow();\n"
+            "    return TRUE;\n"
+            "}\n"
+            "CMyApp theApp;                           // 全局唯一的应用程序对象"
+        ),
+        "check": "消息映射三件套(声明宏 / 映射表 / afx_msg 处理函数)都齐了吗? 处理函数签名和教材一致吗?",
+    },
+    {
+        "id": "K22", "level": 4, "name": "键盘消息",
+        "keywords": ["键盘消息", "OnKeyDown", "OnKeyUp", "WM_KEYDOWN", "虚拟键码", "VK_"],
+        "summary": "键盘事件以 WM_KEYDOWN/WM_KEYUP/WM_CHAR 三类消息送达, MFC 把它们分发到 OnKeyDown 等处理函数。",
+        "points": [
+            "MFC 处理函数原型固定: afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)。",
+            "nChar 是虚拟键码: 字母/数字键 VK_ 后缀与其 ASCII 一致(如 VK_ESCAPE=27、VK_RETURN=13), 方向键用 VK_LEFT 等。",
+            "WM_KEYDOWN 是“物理按键”, WM_CHAR 才是“输入的字符” —— 想接收字符(含中文)要处理 OnChar。",
+            "拿按键的可读名字: GetKeyNameText; 判断按下时是否带 Shift/Ctrl 用 GetKeyState。",
+        ],
+        "pitfalls": [
+            "窗口没有输入焦点时收不到键盘消息 —— 用 SetFocus 或先点击窗口;",
+            "把 nChar 当字符直接用 —— 它是虚拟键码, 想直接输出字符应该用 OnChar 的参数;",
+            "按住不放会连发 WM_KEYDOWN(自动重复), 计数类逻辑要自己滤掉重复。",
+        ],
+        "example": (
+            "#include <afxwin.h>\n"
+            "// 在窗口类里声明:\n"
+            "//   afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);\n"
+            "// 消息映射表里加:\n"
+            "//   ON_WM_KEYDOWN()\n"
+            "void CMainWnd::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)\n"
+            "{\n"
+            "    if (nChar == VK_ESCAPE)               // 按 Esc 退出\n"
+            "        PostMessage(WM_CLOSE);\n"
+            "    CFrameWnd::OnKeyDown(nChar, nRepCnt, nFlags);   // 不处理的情况交回基类\n"
+            "}"
+        ),
+        "check": "处理的是按键(OnKeyDown)还是字符(OnChar)? 消息映射表里挂上 ON_WM_KEYDOWN 了吗?",
+    },
+    {
+        "id": "K23", "level": 4, "name": "鼠标消息",
+        "keywords": ["鼠标消息", "OnLButtonDown", "OnLButtonUp", "OnMouseMove",
+                     "WM_LBUTTONDOWN", "CPoint"],
+        "summary": "鼠标按键与移动以 WM_xBUTTONDOWN/UP/MOVE 消息送达, MFC 分发到 OnLButtonDown 等函数, 坐标在 CPoint 里。",
+        "points": [
+            "MFC 处理函数原型固定: afx_msg void OnLButtonDown(UINT nFlags, CPoint point);",
+            "point 是客户区坐标(相对窗口左上角); 需要屏幕坐标时用 ClientToScreen 转换。",
+            "nFlags 里带着修饰键状态: MK_CONTROL、MK_SHIFT、MK_LBUTTON 等, 用按位与判断。",
+            "典型套路: 在 OnLButtonDown 里记住起点, 在 OnMouseMove 里画橡皮筋, 在 OnLButtonUp 里定稿。",
+        ],
+        "pitfalls": [
+            "把 CPoint 当成屏幕绝对坐标用 —— 多显示器/窗口移动后全错, 要转换走 ClientToScreen;",
+            "只在 OnLButtonDown 画图却没有重绘准备 —— 窗口一旦被遮挡, 用 WM_PAINT 重画时没有持久数据可恢复;",
+            "忘了在消息映射表里挂 ON_WM_LBUTTONDOWN, 函数写了也不被调用。",
+        ],
+        "example": (
+            "#include <afxwin.h>\n"
+            "// 声明: afx_msg void OnLButtonDown(UINT nFlags, CPoint point);\n"
+            "// 映射表: ON_WM_LBUTTONDOWN()\n"
+            "void CMainWnd::OnLButtonDown(UINT nFlags, CPoint point)\n"
+            "{\n"
+            "    CString text;\n"
+            "    text.Format(\"你点在了 (%d, %d)\", point.x, point.y);   // point 是客户区坐标\n"
+            "    CClientDC dc(this);\n"
+            "    dc.TextOut(10, 10, text);\n"
+            "    CFrameWnd::OnLButtonDown(nFlags, point);\n"
+            "}"
+        ),
+        "check": "处理函数参数顺序对不对(UINT nFlags, CPoint point)? 坐标要客户区还是屏幕坐标?",
+    },
 ]
 
 SKILL_BY_ID: Dict[str, Dict[str, Any]] = {s["id"]: s for s in SKILLS}

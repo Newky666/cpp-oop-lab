@@ -133,20 +133,26 @@ class TestBank(unittest.TestCase):
 
     def test_every_level_has_problems(self):
         counts = oop_bank.level_counts()
-        for level in (1, 2, 3):
+        for level in sorted(oc.LEVEL_NAMES):
             self.assertGreaterEqual(counts.get(level, 0), 6, "第 %d 档题目太少" % level)
 
     def test_ids_are_unique_and_ordered(self):
         ids = [p["id"] for p in oop_bank.BUILTIN]
         self.assertEqual(len(ids), len(set(ids)))
-        self.assertEqual(len(ids), 22)
+        # 显式数字是刻意的闸门: 题库数量变了要有人有意识地确认一次
+        self.assertEqual(len(ids), 28)
 
     def test_every_builtin_problem_has_tests_and_solution(self):
         for problem in oop_bank.BUILTIN:
-            self.assertTrue(problem["tests"], "%s 没有自动用例" % problem["id"])
             self.assertTrue(problem["solution"].strip(), "%s 没有参考解" % problem["id"])
-            self.assertIn("int main", problem["solution"])
             self.assertIn("TODO", problem["skeleton"])
+            if problem.get("framework") == "mfc":
+                # 可视化题没有控制台用例, 靠要点检查(checks)把关
+                self.assertTrue(problem["checks"],
+                                "%s 是 MFC 题但没有 checks 规则" % problem["id"])
+            else:
+                self.assertTrue(problem["tests"], "%s 没有自动用例" % problem["id"])
+                self.assertIn("int main", problem["solution"])
 
     def test_find_accepts_loose_ids(self):
         for key in ("b01", "B01", "b1", "student-class"):
@@ -323,13 +329,56 @@ class TestJudgeHelpers(unittest.TestCase):
         report.compiled = False
         self.assertEqual(report.verdict, "CE")
 
+        # 编译通过但没有控制台用例 = 编译验证型(教材第 2~8 章的 MFC 题走这条)
         report.compiled = True
-        self.assertEqual(report.verdict, "SKIP")
+        self.assertEqual(report.verdict, "COMPILED")
 
         report.cases = [oop_judge.CaseResult(1, True), oop_judge.CaseResult(2, False, verdict="WA")]
         self.assertEqual(report.verdict, "WA")
         self.assertEqual(report.passed, 1)
         self.assertEqual(len(report.failures()), 1)
+
+    def test_run_checks_matches_source(self):
+        checks = [
+            {"pattern": r"\bCDC\b", "hint": "要用 CDC"},
+            {"pattern": r"\bOnPaint\b", "hint": "要有 OnPaint", "required": False},
+        ]
+        results = oop_judge.run_checks("void f() { CDC dc; }", checks)
+        self.assertTrue(results[0].ok)
+        self.assertFalse(results[1].ok)
+        self.assertFalse(results[1].required)
+        self.assertTrue(oop_judge.render_checks(results))       # 渲染不抛异常
+
+    def test_run_checks_tolerates_bad_rule(self):
+        self.assertFalse(oop_judge.run_checks("abc", [{"pattern": "(["}] )[0].ok)
+        self.assertFalse(oop_judge.run_checks("abc", [{"hint": "没给正则"}])[0].ok)
+        self.assertEqual(oop_judge.run_checks("abc", None), [])
+
+    def test_static_only_verdict_and_all_passed(self):
+        """缺 MFC 时降级为静态检查: checks 全过才算通过。"""
+        report = oop_judge.JudgeReport()
+        report.static_only = True
+        rule = [{"pattern": r"\bBeginPaint\b", "hint": "要用 BeginPaint"}]
+        report.checks = oop_judge.run_checks("void f() {}", rule)
+        self.assertEqual(report.verdict, "CHECK_FAIL")
+        self.assertFalse(report.all_passed)
+
+        report.checks = oop_judge.run_checks("HDC h = BeginPaint();", rule)
+        self.assertEqual(report.verdict, "STATIC")
+        self.assertTrue(report.all_passed)
+
+    def test_compile_args_for_mfc_problem(self):
+        problem = {"framework": "mfc", "defines": ["UNICODE"], "libs": ["winmm.lib"]}
+        compile_args = oop_judge.extra_compile_args(problem)
+        self.assertIn("/D_AFXDLL", compile_args)
+        self.assertIn("/DUNICODE", compile_args)
+        link = oop_judge.extra_link_args(problem)
+        self.assertIn("/SUBSYSTEM:WINDOWS", link)
+        self.assertIn("winmm.lib", link)
+        self.assertIn("gdi32.lib", link)
+
+        self.assertEqual(oop_judge.extra_compile_args(None), [])
+        self.assertEqual(oop_judge.extra_link_args(None), "")
 
     def test_render_report_without_compiler_does_not_crash(self):
         report = oop_judge.JudgeReport()
@@ -742,8 +791,9 @@ class TestSkills(unittest.TestCase):
 
     def test_skill_ids_unique_and_ordered(self):
         ids = oop_skills.all_skill_ids()
-        self.assertEqual(len(ids), 17)
-        self.assertEqual(len(set(ids)), 17)
+        # 17 个 C++ 面向对象知识点 + 5 个教材第 2~8 章的 MFC 知识点
+        self.assertEqual(len(ids), 22)
+        self.assertEqual(len(set(ids)), 22)
         self.assertEqual(oop_skills.path_order()[0], "K01")
         for skill_id in ids:
             item = oop_skills.skill(skill_id)

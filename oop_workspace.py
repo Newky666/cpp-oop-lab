@@ -262,13 +262,22 @@ def build_bat_msvc(vcvars: str, std: str = oop_judge.DEFAULT_STD) -> str:
         "rem would escape the closing quote and cl would see no source file at all\n"
         'if "%SRCDIR:~-1%"=="\\" set "SRCDIR=%SRCDIR:~0,-1%"\n'
         'if not exist "%SRCDIR%\\' + BUILD_DIRNAME + '" mkdir "%SRCDIR%\\' + BUILD_DIRNAME + '"\n'
+        "rem MFC problems (textbook ch.2-8): if the source includes afx headers,\n"
+        "rem add the MFC flags automatically (same as py oop_lab.py judge)\n"
+        'set "MFC_OPTS="\n'
+        'set "MFC_LINK="\n'
+        'findstr /c:"<afx" "%SRC%" >nul 2>&1\n'
+        "if not errorlevel 1 (\n"
+        '  set "MFC_OPTS=/D_AFXDLL /MD /D_WINDOWS"\n'
+        '  set "MFC_LINK=/link /SUBSYSTEM:WINDOWS user32.lib gdi32.lib"\n'
+        ")\n"
         'call "{vcvars}" >nul 2>&1\n'
         "if errorlevel 1 (\n"
         '  echo [build] failed to call vcvars64.bat: {vcvars}\n'
         "  exit /b 1\n"
         ")\n"
         'cd /d "%SRCDIR%\\' + BUILD_DIRNAME + '"\n'
-        'cl /nologo /utf-8 /EHsc /std:{std} /W3 /I"%SRCDIR%" /Fe:"%NAME%.exe" "%SRC%"\n'
+        'cl /nologo /utf-8 /EHsc /std:{std} /W3 /I"%SRCDIR%" %MFC_OPTS% /Fe:"%NAME%.exe" "%SRC%" %MFC_LINK%\n'
         "exit /b %ERRORLEVEL%\n"
     ).format(vcvars=vcvars, std=std)
 
@@ -515,15 +524,15 @@ _VCXPROJ = """<?xml version="1.0" encoding="utf-8"?>
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>{toolset}</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
+    <CharacterSet>MultiByte</CharacterSet>
+    {use_mfc}</PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>{toolset}</PlatformToolset>
     <WholeProgramOptimization>false</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
+    <CharacterSet>MultiByte</CharacterSet>
+    {use_mfc}</PropertyGroup>
   <Import Project="$(VCTargetsPath)\\Microsoft.Cpp.props" />
   <PropertyGroup>
     <OutDir>$(ProjectDir){build}\\</OutDir>
@@ -537,12 +546,14 @@ _VCXPROJ = """<?xml version="1.0" encoding="utf-8"?>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>{extra_defines}</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <ConformanceMode>false</ConformanceMode>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>{subsystem}</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>{extra_libs}</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
@@ -566,16 +577,35 @@ _SLN_HEAD = (
 _SLN_TYPE_CPP = "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"
 
 
-def write_vcxproj(target_dir: str, toolset: Optional[str] = None) -> str:
-    """给某道题写一个 VS 工程文件; 返回工程文件名。"""
+def write_vcxproj(target_dir: str, toolset: Optional[str] = None,
+                  problem: Optional[Dict[str, Any]] = None) -> str:
+    """给某道题写一个 VS 工程文件; 返回工程文件名。
+
+    problem 带 framework="mfc" 时写入 MFC 必需的三件套(与 judge 的编译参数一致):
+    UseOfMfc=Dynamic / Windows 子系统 / _AFXDLL 宏 —— 否则 VS 里 F5 编不过。
+    字符集统一用 MultiByte: 教材示例直接写 "字符串字面量" 就能编, 不强制 _T()。
+    """
     name = os.path.basename(target_dir.rstrip("\\/"))
     path = os.path.join(target_dir, "%s.vcxproj" % name)
+    problem = problem or {}
+    is_mfc = str(problem.get("framework") or "console").lower() == "mfc"
+    subsystem = str(problem.get("subsystem")
+                    or ("windows" if is_mfc else "console")).title()
+    defines = (["_AFXDLL"] if is_mfc else [])
+    defines += [str(item) for item in problem.get("defines") or []]
+    libs = [str(item) for item in problem.get("libs") or []]
+    if is_mfc:
+        libs += ["user32.lib", "gdi32.lib"]
     content = _VCXPROJ.format(
         guid=project_guid(name),
         namespace=re.sub(r"[^A-Za-z0-9_]", "_", name),
         toolset=toolset or detect_platform_toolset(),
         build=BUILD_DIRNAME,
         source=SOURCE_NAME,
+        use_mfc="<UseOfMfc>Dynamic</UseOfMfc>\n    " if is_mfc else "",
+        subsystem=subsystem,
+        extra_defines=";".join(defines + ["%(PreprocessorDefinitions)"]),
+        extra_libs=";".join(libs + ["%(AdditionalDependencies)"]),
     )
     write_text_crlf(path, content)
     return os.path.basename(path)
@@ -700,7 +730,7 @@ def create_problem(problem: Dict[str, Any], root: Optional[str] = None,
         put(os.path.join(tests_dir, "%02d.out" % index), test.get("out") or "",
             overwrite=force)
 
-    write_vcxproj(target)
+    write_vcxproj(target, problem=problem)
     solution = refresh_solution(base)
 
     chain = toolchain if toolchain is not None else oop_judge.find_toolchain()

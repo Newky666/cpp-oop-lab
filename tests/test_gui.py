@@ -396,8 +396,8 @@ class TestWindowSmoke(GuiCase):
         # 每道题一个节点(分组节点不算在内)
         self.assertEqual(window.tree_item_count(), len(window.problems))
         self.assertGreaterEqual(window.tree_item_count(), 22)
-        # 三个档位分组节点
-        self.assertEqual(len(window.tree.get_children("")), 3)
+        # 四个档位分组节点(基础/进阶/高级/可视化·MFC)
+        self.assertEqual(len(window.tree.get_children("")), 4)
         self.assertIsNotNone(window.problem)
 
     def test_switching_problem_loads_all_panes(self):
@@ -679,6 +679,58 @@ class TestEndToEndJudge(GuiCase):
         result = window.result_text()
         self.assertIn("[WA]", result)
         self.assertEqual(window.store.status("b01"), "doing")
+
+
+class TestIcon(unittest.TestCase):
+    """图标: 生成器产物必须可解码, 打包参数与窗口都要用上它。"""
+
+    @staticmethod
+    def _ico_path():
+        return os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "oop_lab.ico")
+
+    def test_ico_has_multiple_sizes(self):
+        path = self._ico_path()
+        self.assertTrue(os.path.isfile(path),
+                        "缺少 oop_lab.ico —— 先跑 py tools/make_ico.py")
+        with open(path, "rb") as fh:
+            head = fh.read(6)
+        self.assertEqual(head[:4], b"\x00\x00\x01\x00")       # ICONDIR, type=1
+        count = head[4] | (head[5] << 8)
+        self.assertGreaterEqual(count, 4, "图标至少要有 4 个尺寸")
+
+    def test_build_args_include_absolute_icon(self):
+        import build_exe
+        args = build_exe._build_pyinstaller_args()
+        self.assertIn("--icon", args)
+        icon = args[args.index("--icon") + 1]
+        self.assertTrue(os.path.isabs(icon))                  # 相对路径会解析失败
+        self.assertTrue(icon.endswith(".ico"))
+
+    def test_embedded_png_decodes_to_64x64(self):
+        if not tk_available():
+            self.skipTest("本机没有可用的显示环境")
+        import tkinter
+
+        import oop_lab_icon
+        root = tkinter.Tk()
+        root.withdraw()
+        try:
+            image = tkinter.PhotoImage(data=oop_lab_icon.ICON_PNG_B64)
+            self.assertEqual((image.width(), image.height()), (64, 64))
+        finally:
+            root.destroy()
+
+    def test_apply_window_icon_does_not_raise(self):
+        if not tk_available():
+            self.skipTest("本机没有可用的显示环境")
+        import tkinter
+        root = tkinter.Tk()
+        root.withdraw()
+        try:
+            oop_gui_app._apply_window_icon(root)              # 不抛异常即可
+        finally:
+            root.destroy()
 
 
 class TestBuildScript(unittest.TestCase):

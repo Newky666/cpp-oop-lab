@@ -44,12 +44,13 @@ WORKSPACE_DIR = os.path.join(BASE_DIR, "workspace")
 PROGRESS_FILE = os.path.join(DATA_DIR, "progress.json")
 USER_BANK_FILE = os.path.join(DATA_DIR, "user_problems.json")
 
-LEVEL_NAMES: Dict[int, str] = {1: "基础", 2: "进阶", 3: "高级"}
-LEVEL_STARS: Dict[int, str] = {1: "★☆☆", 2: "★★☆", 3: "★★★"}
+LEVEL_NAMES: Dict[int, str] = {1: "基础", 2: "进阶", 3: "高级", 4: "可视化 · MFC"}
+LEVEL_STARS: Dict[int, str] = {1: "★☆☆", 2: "★★☆", 3: "★★★", 4: "◆◆◆◆"}
 LEVEL_TOPICS: Dict[int, str] = {
     1: "类与对象 / 封装 / 构造与析构 / const / static / 运算符重载入门",
     2: "拷贝控制 / 继承与派生 / 虚函数多态 / 抽象类 / 友元 / 运算符重载进阶",
     3: "模板与特化 / RAII 与智能指针 / 设计模式 / 多重继承与虚继承",
+    4: "Windows 消息机制 / GDI 绘图 / 字体与文本 / 键盘鼠标 / 资源 / 控件 / 文档视图",
 }
 
 LOG = logging.getLogger(APP_NAME)

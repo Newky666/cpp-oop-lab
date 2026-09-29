@@ -39,7 +39,7 @@ PROFILE_FILE = os.path.join(oc.DATA_DIR, "profile.json")
 LOG_FILE = os.path.join(oc.DATA_DIR, "learning_log.md")
 LOG_JSONL = os.path.join(oc.DATA_DIR, "learning_log.jsonl")
 
-LEVEL_NAMES = {1: "基础", 2: "进阶", 3: "高级"}
+LEVEL_NAMES = oc.LEVEL_NAMES          # 与 oop_common 保持同一份(别再各写一份)
 MAX_RECORDS = 400
 
 # 知识点 -> 在 OJ 上容易搜到的题目关键词(洛谷/dotcpp 是按题名匹配的, 学术名词搜不到)
@@ -308,7 +308,7 @@ class LearnerProfile:
         lines.append("")
 
         practised = set(self.practised())
-        for skill_level in (1, 2, 3):
+        for skill_level in sorted(oc.LEVEL_NAMES):
             lines.append(oc.color("第 %d 档 · %s" % (
                 skill_level, LEVEL_NAMES.get(skill_level, "")), "cyan"))
             for item in oop_skills.skills_by_level(skill_level):

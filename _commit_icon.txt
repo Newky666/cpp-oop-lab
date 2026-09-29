@@ -1,0 +1,8 @@
+feat(图标): 程序图标(手绘生成 → 多尺寸 ICO → exe 与窗口都带上)
+
+- tools/make_ico.py: 纯标准库手绘「类继承关系图」图标(深蓝→紫渐变底 +
+  父类/子类方块 + 连线), 超采样抗锯齿; 输出 256/128/64/48/32/16 六个尺寸,
+  按 PNG-in-ICO 打包成 oop_lab.ico, 并生成 64×64 base64 常量模块
+- build_exe.py: PyInstaller 加 --icon(绝对路径, 有上次的教训); 缺 .ico 时静默跳过
+- oop_gui_app: 窗口用内嵌 PNG iconphoto(单文件 exe 也能显示), 回退到 .ico
+- 测试: 新增 TestIcon 4 条(ICO 结构 / 打包参数 / 内嵌 PNG 解码 / 窗口应用)

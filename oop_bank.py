@@ -16,23 +16,27 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, List, Optional
 
 import oop_bank_adv
 import oop_bank_basic
 import oop_bank_pro
+import oop_bank_visual
 from oop_common import LEVEL_NAMES, USER_BANK_FILE, load_json, save_json, slugify
 
 BUILTIN: List[Dict[str, Any]] = (
     list(oop_bank_basic.PROBLEMS)
     + list(oop_bank_adv.PROBLEMS)
     + list(oop_bank_pro.PROBLEMS)
+    + list(oop_bank_visual.PROBLEMS)      # 第 4 档: 教材第 5 版(MFC 可视化)
 )
 
 _REQUIRED_KEYS = ("id", "level", "title", "desc", "skeleton", "solution", "tests")
 
 # 每题必须给到的字段(缺省值由 _normalize 补齐, 这里只列语义必填项)
-_LIST_KEYS = ("topics", "require", "hints", "checklist", "tests", "samples")
+_LIST_KEYS = ("topics", "require", "hints", "checklist", "tests", "samples",
+              "defines", "libs", "checks")
 
 
 def _normalize(problem: Dict[str, Any], source: str = "builtin") -> Dict[str, Any]:
@@ -48,6 +52,8 @@ def _normalize(problem: Dict[str, Any], source: str = "builtin") -> Dict[str, An
     for key in _LIST_KEYS:
         value = p.get(key)
         p[key] = list(value) if isinstance(value, (list, tuple)) else []
+    p.setdefault("framework", "console")    # console 控制台题 | mfc 可视化题(教材第 2~8 章)
+    p.setdefault("subsystem", "")           # windows / console; 空 = 按 framework 默认
     p.setdefault("slug", slugify(p.get("title") or p["id"]))
     p["source"] = p.get("source", source)
     return p
@@ -169,21 +175,47 @@ def validate(problem: Dict[str, Any]) -> List[str]:
     """结构自检: 返回问题列表(空列表 = 通过)。单元测试直接用它。"""
     errors: List[str] = []
     pid = problem.get("id", "<无 id>")
+    framework = str(problem.get("framework") or "console").lower()
     for key in _REQUIRED_KEYS:
-        if not problem.get(key):
-            # 在线导入的题目允许没有参考解与用例
-            if problem.get("source") == "user" and key in ("solution", "tests"):
-                continue
-            errors.append("%s: 缺少字段 %s" % (pid, key))
+        if problem.get(key):
+            continue
+        # 在线导入的题目允许没有参考解与用例
+        if problem.get("source") == "user" and key in ("solution", "tests"):
+            continue
+        # MFC 窗口题没有控制台用例(靠 checks 把关)
+        if framework == "mfc" and key == "tests":
+            continue
+        errors.append("%s: 缺少字段 %s" % (pid, key))
     if not isinstance(problem.get("level"), int) or problem["level"] not in LEVEL_NAMES:
-        errors.append("%s: level 必须是 1/2/3" % pid)
+        errors.append("%s: level 必须是 %s"
+                      % (pid, "/".join(str(k) for k in sorted(LEVEL_NAMES))))
+
+    if framework not in ("console", "mfc"):
+        errors.append("%s: framework 必须是 console/mfc, 现在是 %r" % (pid, framework))
+    if framework == "mfc" and not (problem.get("checks") or []):
+        errors.append("%s: MFC 题必须至少写一条 checks 规则(缺编译环境时靠它把关)" % pid)
+    for index, rule in enumerate(problem.get("checks") or [], start=1):
+        if not isinstance(rule, dict) or not rule.get("pattern"):
+            errors.append("%s: 第 %d 条 checks 缺少 pattern" % (pid, index))
+            continue
+        try:
+            re.compile(str(rule["pattern"]))
+        except re.error as exc:
+            errors.append("%s: 第 %d 条 checks 正则非法: %s" % (pid, index, exc))
+
     for i, test in enumerate(problem.get("tests", [])):
         if not isinstance(test, dict) or "in" not in test or "out" not in test:
             errors.append("%s: 第 %d 个用例缺少 in/out" % (pid, i + 1))
+    requires_main = framework == "console"
     for name in ("skeleton", "solution"):
         text = problem.get(name) or ""
-        if text and "int main" not in text:
+        if not text:
+            continue
+        if requires_main and "int main" not in text:
             errors.append("%s: %s 缺少 int main()" % (pid, name))
+        # 头文件不允许省略 —— 用户明确要求每道题都把 #include 写全
+        if "#include" not in text:
+            errors.append("%s: %s 缺少 #include —— 题目的头文件不允许省略" % (pid, name))
     if pid != "<无 id>":
         m = problem.get("skeleton") or ""
         if m and "TODO" not in m:

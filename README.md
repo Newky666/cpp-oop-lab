@@ -2,14 +2,15 @@
 
 > **一条命令进菜单，一个工作区练全部题，每道题先学知识点再动手。**
 >
-> 22 道阶梯式内建题 + 洛谷/dotcpp/Codeforces/GitHub/任意网站联网找题 →
+> 28 道阶梯式内建题（含教材《Visual C++面向对象与可视化程序设计(第 5 版)》对齐的 MFC 题）+
+> 洛谷/dotcpp/Codeforces/GitHub/任意网站联网找题 →
 > 自适应排课 → **先读知识点讲义** → 在 **VSCode 或 Visual Studio** 里写代码 →
 > 一键评测(逐行比对) → **老师式诊断(错在哪、哪个知识点没掌握、怎么补)** →
 > 学习画像 + 学习日志。
 >
 > 纯 Python 标准库实现，零第三方依赖。
 
-![依赖](https://img.shields.io/badge/dependencies-纯标准库-brightgreen) ![平台](https://img.shields.io/badge/platform-Windows%2010%2F11-informational) ![题库](https://img.shields.io/badge/题库-22%20题-blue) ![知识点](https://img.shields.io/badge/知识点-17%20个-orange) ![编辑器](https://img.shields.io/badge/编辑器-VSCode%20%7C%20Visual%20Studio-success)
+![依赖](https://img.shields.io/badge/dependencies-纯标准库-brightgreen) ![平台](https://img.shields.io/badge/platform-Windows%2010%2F11-informational) ![题库](https://img.shields.io/badge/题库-28%20题-blue) ![知识点](https://img.shields.io/badge/知识点-22%20个-orange) ![教材](https://img.shields.io/badge/教材-Visual%20C%2B%2B%20第5版%20(黄维通)-yellowgreen) ![编辑器](https://img.shields.io/badge/编辑器-VSCode%20%7C%20Visual%20Studio-success)
 
 ---
 
@@ -21,7 +22,7 @@
 - [4. 先学后练：每道题前面的知识点讲义](#4-先学后练每道题前面的知识点讲义)
 - [5. 一个统一工作区（VSCode + Visual Studio 通用）](#5-一个统一工作区vscode--visual-studio-通用)
 - [6. 老师模式：排课 → 判对错 → 讲解 → 记录](#6-老师模式排课--判对错--讲解--记录)
-- [7. 题目总览（22 题）](#7-题目总览22-题)
+- [7. 题目总览（28 题 · 含教材第 5 版对齐）](#7-题目总览28-题--含教材第-5-版对齐)
 - [8. 命令一览](#8-命令一览)
 - [9. 自动「指正」：评测 + 写法审查 + 诊断](#9-自动指正评测--写法审查--诊断)
 - [10. 学习画像与学习日志](#10-学习画像与学习日志)
@@ -102,7 +103,7 @@ py oop_lab.py submit b04        :: 生成提交包, 贴给 AI/老师点评
 
 ```
 ========================================================================
-  C++ 面向对象训练营 · OOP Lab    从类与对象到设计模式, 22 题阶梯式过关
+  C++ 面向对象训练营 · OOP Lab    从类与对象到 MFC 可视化, 28 题阶梯式过关
 ========================================================================
   进度 3/22   [######..........]  14.3%   档位 第 1 档 · 基础   MSVC (cl.exe + vcvars64)
   练习工作区: D:\code\cpp-oop-lab\workspace
@@ -114,13 +115,13 @@ py oop_lab.py submit b04        :: 生成提交包, 贴给 AI/老师点评
   5)  开练某道题(生成工程并打开编辑器)
   6)  评测当前题(编译 + 用例 + 老师式诊断)
   7)  写法审查(12 条 OOP 规则)
-  8)  我的学习画像(17 个知识点掌握度)
+  8)  我的学习画像(22 个知识点掌握度)
   9)  学习日志
   10) 联网找题 / 导入题目
   11) 只看某道题的参考解
   12) 打开练习工作区
   13) 环境自检
-  14) 题库自检(22 题参考解真编译)
+  14) 题库自检(28 题参考解真编译, MFC 题未装组件时跳过)
   0)  退出
 
 请选择 [0-14]:
@@ -148,7 +149,7 @@ b01-student-class/
 └── b01-student-class.vcxproj
 ```
 
-讲义内容来自统一的 17 个知识点图谱，例如 `b01` 会带上：
+讲义内容来自统一的 22 个知识点图谱（17 个 C++ 面向对象 + 5 个教材第 2~8 章的 MFC 知识点），例如 `b01` 会带上：
 
 ```
 ## K01 类与封装    <sub>第 1 档</sub>
@@ -182,7 +183,7 @@ b01-student-class/
 ```bat
 py oop_lab.py study b04        :: 打印 b04 涉及的全部知识点讲义
 py oop_lab.py study K12        :: 只看某个知识点
-py oop_lab.py skills           :: 列出全部 17 个知识点
+py oop_lab.py skills           :: 列出全部 22 个知识点
 ```
 
 ---
@@ -251,13 +252,14 @@ workspace/
 
 ## 6. 老师模式：排课 → 判对错 → 讲解 → 记录
 
-### 6.1 知识点图谱（17 个）
+### 6.1 知识点图谱（22 个）
 
 | 档位 | 知识点 |
 | --- | --- |
 | 基础 | `K01` 类与封装 · `K02` 构造函数与初始化列表 · `K03` 析构与对象生命周期 · `K04` 拷贝构造与深拷贝 · `K05` const 正确性与 this · `K06` static 成员与静态工厂 · `K07` 运算符重载 |
 | 进阶 | `K08` 继承与派生 · `K09` 虚函数与运行时多态 · `K10` 抽象类与虚析构 · `K11` 友元 · `K12` 拷贝控制与 Rule of Three · `K17` 组合与聚合(has-a) |
 | 高级 | `K13` 类模板与特化 · `K14` RAII 与智能指针 · `K15` 设计模式 · `K16` 多重继承与虚继承 |
+| 可视化 · MFC | `K18` Windows 编程基础与消息机制 · `K19` 设备环境与 GDI 绘图 · `K22` 键盘消息 · `K23` 鼠标消息 · `K33` 消息映射与 MFC 程序骨架 |
 
 题目的中文标签按「最长关键词命中」自动映射到知识点；从洛谷/dotcpp/CF 导入的题会从
 题面和标题里猜知识点，同样能参与画像与排课。
@@ -319,7 +321,14 @@ py oop_lab.py plan
 
 ---
 
-## 7. 题目总览（22 题）
+## 7. 题目总览（28 题 · 含教材第 5 版对齐）
+
+> **教材对齐**: 第 4 档 `v01~v06` 对齐黄维通、童军博
+> 《Visual C++面向对象与可视化程序设计（第 5 版）》（高教社）：
+> `v01~v03` 覆盖第 1 章的 C++ 细节（嵌套类 / 内联方法 / 类指针与 this，控制台题可自动评测），
+> `v04~v06` 覆盖第 2、4 章的 MFC 编程（GDI 绘图 / 画笔画刷 / 鼠标键盘）。
+> MFC 题需要 VS 的 MFC 组件（见 [12. 环境自检](#12-环境自检)），未安装时评测自动降级为
+> 「要点检查」（检查是否用对了 CDC / CPen / 消息映射等关键写法），装好后即可真编译。
 
 ### 第 1 档 · 基础 ★☆☆ —— 一个类从无到有
 
@@ -358,8 +367,20 @@ py oop_lab.py plan
 | `a06` | 设计模式：观察者（发布-订阅） | 观察者模式 / 接口 + 多态 |
 | `a07` | 多重继承与虚继承：菱形继承 | 多重继承 / `virtual` 基类 / 构造顺序 |
 
+### 第 4 档 · 可视化 · MFC ◆◆◆◆ —— 对齐教材第 5 版
+
+| 编号 | 题目 | 考察点 | 教材 |
+| --- | --- | --- | --- |
+| `v01` | 嵌套类：学生成绩单 | 类的嵌套定义 / 成员对象 | 1.2.2 |
+| `v02` | 内联方法：两种写法 | 类内定义(隐式) / `inline` 类外定义(显式) | 1.2.3 |
+| `v03` | 类指针与 this：链式调用 | `new`/`delete` / `p->` / 返回 `*this` | 1.6 |
+| `v04` | CDC 绘图：直线 / 矩形 / 椭圆 | `CPaintDC` / `MoveTo`+`LineTo` / `Rectangle` / `Ellipse` | 2.5~2.6 |
+| `v05` | 画笔、画刷与颜色 | `CPen` / `CBrush` / `RGB` / `SelectObject` 后恢复旧对象 | 2.4 |
+| `v06` | 鼠标与键盘响应 | `ON_WM_LBUTTONDOWN` / `OnKeyDown` / `CPoint` / `VK_ESCAPE` | 第 4 章 |
+
 每题都带：`knowledge.md` 讲义 + 题面 + 逐条要求 + 样例 + 提示 + **完成前自查清单** +
-带 `TODO` 的骨架 + 3 组左右自动评测用例 + 参考解（通过后解锁）。
+带 `TODO` 的骨架（**头文件写全，不省略任何 `#include` 与 `using`**）+ 自动评测用例
+（MFC 题为要点检查）+ 参考解（通过后解锁）。
 
 ---
 
@@ -376,7 +397,7 @@ py oop_lab.py plan -n 5          多安排几道; --local-only 只用本地题�
 py oop_lab.py study b04          先学后练: 本题的知识点讲义
 py oop_lab.py study K12          只看某个知识点
 py oop_lab.py diagnose b04       老师式诊断: 错在哪 / 哪个知识点 / 怎么补
-py oop_lab.py profile            学习画像: 17 个知识点掌握度 + 综合档位
+py oop_lab.py profile            学习画像: 22 个知识点掌握度 + 综合档位
 py oop_lab.py log -n 10          学习日志
 
 :: ——— 找题 / 练题 ———
@@ -405,7 +426,7 @@ py oop_lab.py sources            管理题目来源(增删启停)
 :: ——— 自检 ———
 py oop_lab.py doctor             环境自检(编译器 / 编辑器 / 题库健康度)
 py oop_lab.py selftest           用每题参考解真编译一遍
-py -m unittest discover -s tests -t .    回归测试(151 条: 97 命令行/题库 + 54 GUI)
+py -m unittest discover -s tests -t .    回归测试(165 条: 101 命令行/题库 + 64 GUI)
 ```
 
 全局开关：`--no-color`（关闭彩色）、`-v`（调试日志 + 显示用例实际输出）。
@@ -565,10 +586,19 @@ py oop_lab.py doctor
 [OK] VSCode code 命令可用: C:\Users\...\bin\code.CMD
 [OK] Visual Studio 可用(oop_lab.sln 可直接 F5)
      将生成的 VS 工程平台工具集: v145
+== MFC 可视化支持(教材第 2~8 章) ==
+[OK] MFC 可用: ...\atlmfc\include\afxwin.h          ← 装了就是这行
+[!] 未安装 MFC 组件 —— MFC 题目只做要点检查, 不能真编译   ← 没装是这行
+     · 安装方法: VS Installer → 修改 → 单个组件 →
+       勾选「适用于最新 v143 生成工具的 C++ MFC(x86 和 x64)」后重新打开终端
 == 题库健康度 ==
-  [OK] 22 题结构自检通过
+  [OK] 28 题结构自检通过
   在线导入题目: 0 题
 ```
+
+> **MFC 组件是可选的、但强烈建议装**：教材第 2~8 章的题目用 Visual Studio 刷题时
+> 需要它（VS 工程已经写好 `UseOfMfc`）；不装也能读讲义、写代码、跑要点检查，
+> 只是 `judge` 不会真编译，判断依据变成「要点检查」。
 
 ---
 
@@ -588,7 +618,11 @@ cpp-oop-lab/
 ├── oop_common.py         公共设施(终端宽度与颜色 / JSON 原子写 / 输出归一化 / 进度存储)
 ├── oop_html.py           底层网页工具(HTTP / 编码 / HTML 转文本 / 空白规范化)
 ├── oop_web.py            通用题面抽取 + 可配置的来源注册表
-├── oop_skills.py         知识点图谱: 17 个知识点 + 讲义 + 报错/审查规则映射表
+├── oop_bank_visual.py    第 4 档题库(6 题, 对齐教材第 5 版: 3 控制台 + 3 MFC)
+├── oop_lab_icon.py       图标数据(64×64 PNG base64, 由 tools/make_ico.py 生成)
+├── tools/make_ico.py     图标生成器(纯标准库手绘 → 多尺寸 oop_lab.ico)
+├── oop_lab.ico           exe 文件图标(PyInstaller --icon 用)
+├── oop_skills.py         知识点图谱: 22 个知识点 + 讲义 + 报错/审查规则映射表
 ├── oop_coach.py          教练引擎: 学习画像 / 自适应排课 / 诊断讲解 / 学习日志
 ├── oop_bank.py           题库聚合层(内建 + 在线导入, 查找/过滤/结构自检)
 ├── oop_bank_basic.py     第 1 档题库(7 题, 含参考解与用例)
@@ -741,10 +775,23 @@ py oop_lab.py new b08               :: 生成题目目录 + 讲义 + VS 工程
 - 快捷键：**F5** 评测、**Ctrl+S** 保存；标题栏的 `*` 表示还没保存。
 - 「教练排课」「找题」的弹窗里可以**双击一行**直接跳到那一题。
 
+### 图标
+
+图标是**用代码画出来的**（`tools/make_ico.py`，纯标准库：手绘渲染 → 超采样抗锯齿 →
+PNG-in-ICO 打包成 256/128/64/48/32/16 六个尺寸）：
+
+```bat
+py tools\make_ico.py         :: 重新生成 oop_lab.ico 与 oop_lab_icon.py
+```
+
+图案是「类继承关系图」：上方一个父类方块、下方两个子类方块用连线相连（深蓝→紫渐变底）。
+`build_exe.py` 会把 `oop_lab.ico` 传给 PyInstaller（文件图标）；窗口左上角用的是
+内嵌的 64×64 PNG（`oop_lab_icon.py`），不依赖外部文件 —— 单文件 exe 里也能显示。
+
 ### 从源码打包
 
 ```bat
-py build_exe.py              :: -> dist\OOPLab.exe   单文件, 约 9.7 MB
+py build_exe.py              :: -> dist\OOPLab.exe   单文件, 约 9.7 MB(带图标)
 py build_exe.py --onedir     :: -> dist\OOPLab\      文件夹版, 启动更快
 ```
 
