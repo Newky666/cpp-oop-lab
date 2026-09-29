@@ -45,6 +45,22 @@ def enable_dpi_awareness() -> None:
         pass
 
 
+def window_geometry(screen_width: int, screen_height: int,
+                    want_width: int = 1280, want_height: int = 800,
+                    margin: int = 80):
+    """算出主窗口该用的 大小 与 位置: 保证不超出屏幕, 并且居中。
+
+    这是踩过的坑: 只写 geometry("1280x800") 不指定位置, 窗口管理器会自己乱摆 ——
+    实测摆到了 +712 的位置, 右边超出屏幕 285 像素。用户双击后看到的是"什么都不出来"
+    (窗口开在屏幕外/被别的窗口盖住), 会直接认为程序打不开。
+    """
+    width = max(640, min(int(want_width), int(screen_width) - margin))
+    height = max(480, min(int(want_height), int(screen_height) - margin))
+    x = max(0, (int(screen_width) - width) // 2)
+    y = max(0, (int(screen_height) - height) // 3)
+    return width, height, x, y
+
+
 class LabWindow:
     """整个界面。对外只需要 root 一个参数, 方便测试里直接 new 出来。"""
 
@@ -59,13 +75,44 @@ class LabWindow:
         self._prepared: set = set()                 # 已经生成过工程目录的题目 id
 
         root.title("OOP Lab — C++ 面向对象训练营")
-        root.geometry("1280x800")
-        root.minsize(960, 640)
+        self._place_window(root)
         self._build_toolbar()
         self._build_body()
         self._build_statusbar()
         self.reload_problems()
         self._poll()
+
+    @staticmethod
+    def _place_window(root: tk.Tk) -> None:
+        """把窗口摆到屏幕中央, 并设一个不会超出屏幕的最小尺寸。"""
+        width, height, x, y = window_geometry(root.winfo_screenwidth(),
+                                             root.winfo_screenheight())
+        root.minsize(min(960, width), min(640, height))
+        root.geometry("%dx%d+%d+%d" % (width, height, x, y))
+
+    def bring_to_front(self) -> None:
+        """把自己提到最前面并抢焦点。
+
+        双击启动的程序必须主动"露脸": 否则窗口可能被 IDE 之类的窗口盖住,
+        用户以为没打开, 于是又双击一次 —— 结果开了好几个窗口。
+        """
+        self.root.deiconify()
+        self.root.lift()
+        try:
+            self.root.attributes("-topmost", True)
+            self.root.after(900, self._drop_topmost)
+        except tk.TclError:
+            pass
+        try:
+            self.root.focus_force()
+        except tk.TclError:
+            pass
+
+    def _drop_topmost(self) -> None:
+        try:
+            self.root.attributes("-topmost", False)
+        except tk.TclError:
+            pass
 
     # ------------------------------------------------------------------ 构建
     def _build_toolbar(self) -> None:
@@ -498,6 +545,19 @@ def main(argv=None) -> int:
     window = LabWindow(root)
     oc.LOG.info("窗口就绪: %d 道题, 编译器 %s", len(window.problems),
                 window.toolchain.describe() if window.toolchain else "无")
+    window.bring_to_front()
+
+    def _log_geometry() -> None:
+        """映射之后再记录一次 —— 刚建好时 Tk 只会给出占位的 1x1。"""
+        width, height, x, y = (root.winfo_width(), root.winfo_height(),
+                               root.winfo_x(), root.winfo_y())
+        screen_w, screen_h = root.winfo_screenwidth(), root.winfo_screenheight()
+        oc.LOG.info("窗口已显示: 屏幕 %dx%d, 窗口 %dx%d+%d+%d, 完整可见=%s",
+                    screen_w, screen_h, width, height, x, y,
+                    x >= 0 and y >= 0 and x + width <= screen_w
+                    and y + height <= screen_h)
+
+    root.after(800, _log_geometry)
     root.mainloop()
     return 0
 

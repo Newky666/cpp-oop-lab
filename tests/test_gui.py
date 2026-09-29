@@ -313,6 +313,40 @@ class TestCodeEditorSmoke(unittest.TestCase):
         self.assertTrue(editor.get_text().endswith("\n" + ge.INDENT))
 
 
+class TestWindowGeometry(unittest.TestCase):
+    """窗口必须落在屏幕里 —— 开在屏幕外等于"程序打不开"。
+
+    这是个真 bug 的回归测试: 只写 geometry("1280x800") 不指定位置时, 窗口管理器
+    把窗口摆到了 +712, 右边超出屏幕 285 像素。
+    """
+
+    def test_normal_screen_centered_and_fully_visible(self):
+        width, height, x, y = oop_gui_app.window_geometry(1920, 1080)
+        self.assertEqual((width, height), (1280, 800))
+        self.assertGreaterEqual(x, 0)
+        self.assertGreaterEqual(y, 0)
+        self.assertLessEqual(x + width, 1920)
+        self.assertLessEqual(y + height, 1080)
+
+    def test_shrinks_to_fit_small_screen(self):
+        width, height, x, y = oop_gui_app.window_geometry(1366, 768)
+        self.assertLessEqual(height, 768)
+        self.assertLessEqual(x + width, 1366)
+        self.assertLessEqual(y + height, 768)
+
+    def test_never_offscreen_on_tiny_screen(self):
+        width, height, x, y = oop_gui_app.window_geometry(800, 600)
+        self.assertGreaterEqual(x, 0)
+        self.assertGreaterEqual(y, 0)
+        self.assertLessEqual(x + width, 800)
+        self.assertLessEqual(y + height, 600)
+
+    def test_exactly_the_screen_size_still_works(self):
+        width, height, x, y = oop_gui_app.window_geometry(1280, 800)
+        self.assertLessEqual(x + width, 1280)
+        self.assertLessEqual(y + height, 800)
+
+
 @unittest.skipUnless(tk_available(), "本机没有可用的显示环境")
 class GuiCase(unittest.TestCase):
     """所有建窗口的测试都继承它。
@@ -390,6 +424,17 @@ class TestWindowSmoke(GuiCase):
         self.assertTrue(oc.WORKSPACE_DIR.startswith(self.tmp))
         self.assertTrue(os.path.isdir(
             os.path.join(oc.WORKSPACE_DIR, "b01-student-class")))
+
+    def test_minsize_fits_screen(self):
+        window = self.make_window()
+        min_w, min_h = self.root.minsize()
+        self.assertLessEqual(min_w, self.root.winfo_screenwidth())
+        self.assertLessEqual(min_h, self.root.winfo_screenheight())
+
+    def test_bring_to_front_does_not_raise(self):
+        window = self.make_window()
+        window.bring_to_front()          # 不抛异常即可
+        self.root.update_idletasks()
 
     def test_result_pane_colours_verdict_lines(self):
         window = self.make_window()
