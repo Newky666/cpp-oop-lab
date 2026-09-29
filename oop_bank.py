@@ -54,6 +54,7 @@ def _normalize(problem: Dict[str, Any], source: str = "builtin") -> Dict[str, An
         p[key] = list(value) if isinstance(value, (list, tuple)) else []
     p.setdefault("framework", "console")    # console 控制台题 | mfc 可视化题(教材第 2~8 章)
     p.setdefault("subsystem", "")           # windows / console; 空 = 按 framework 默认
+    p.setdefault("needs_resource", False)   # True = 需要 .rc 资源工程, 纯 main.cpp 只做要点检查
     p.setdefault("slug", slugify(p.get("title") or p["id"]))
     p["source"] = p.get("source", source)
     return p

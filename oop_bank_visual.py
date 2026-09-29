@@ -901,4 +901,730 @@ PROBLEMS: List[Dict[str, Any]] = [
             {"pattern": r"\bMoveTo\b[\s\S]*\bLineTo\b", "hint": "用 MoveTo + LineTo 画对角线"},
         ],
     ),
+    # ---------------------------------------------------------------- v09
+    _p(
+        id="v09",
+        slug="menu-command",
+        title="菜单与命令响应（教材 5.1）",
+        topics=["菜单资源", "菜单消息"],
+        framework="mfc",
+        subsystem="windows",
+        desc=(
+            "教材 5.1: 菜单项点击发出的是命令消息(WM_COMMAND), 用 ON_COMMAND 把命令 ID "
+            "挂到处理函数上。本题不用 .rc 资源文件, 而是用 CMenu 在程序里动态建菜单 —— "
+            "教材 7.4 的快捷菜单也是同一套 API。"
+        ),
+        require=[
+            "为菜单命令定义一个命令 ID(如 #define IDM_ABOUT 1001)。",
+            "在 OnCreate 里用 CMenu 动态创建菜单: CreateMenu + AppendMenu(MF_STRING, IDM_ABOUT, \"关于\")。",
+            "用 SetMenu 把菜单挂到窗口上。",
+            "消息映射表里写 ON_COMMAND(IDM_ABOUT, &CMainWnd::OnAbout)。",
+            "处理函数 OnAbout 里弹一个 MessageBox 响应点击。",
+        ],
+        io="图形界面程序: 窗口带一个「关于」菜单, 点击后弹出消息框。",
+        hints=[
+            "CMenu 建议作为窗口类的成员变量(生命周期跟着窗口走), 局部变量出函数就没了。",
+            "MF_STRING 表示这是一个文本菜单项; 想加分隔线用 AppendMenu(MF_SEPARATOR, 0, NULL)。",
+            "菜单命令 ID 是普通整数, 只要不与其它 ID 冲突即可。",
+        ],
+        checklist=[
+            "#define 的命令 ID 与 ON_COMMAND 里写的一致吗?",
+            "CMenu 对象活到窗口销毁了吗?",
+            "SetMenu 挂上窗口了吗?",
+        ],
+        skeleton=(
+            "#include <afxwin.h>\n"
+            "\n"
+            "// TODO: 定义菜单命令 ID(例如 #define IDM_ABOUT 1001)\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"菜单练习\"); }\n"
+            "    afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);\n"
+            "    // TODO: 声明 OnAbout(afx_msg void)\n"
+            "    CMenu m_menu;                       // 成员: 生命周期随窗口\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "    ON_WM_CREATE()\n"
+            "    // TODO: 挂上 ON_COMMAND(IDM_ABOUT, &CMainWnd::OnAbout)\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "// ================== TODO: 按教材 5.1 完成 ==================\n"
+            "int CMainWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)\n"
+            "{\n"
+            "    if (CFrameWnd::OnCreate(lpCreateStruct) == -1) return -1;\n"
+            "    // TODO: 1) m_menu.CreateMenu()\n"
+            "    // TODO: 2) m_menu.AppendMenu(MF_STRING, IDM_ABOUT, \"关于\")\n"
+            "    // TODO: 3) SetMenu(&m_menu)\n"
+            "    return 0;\n"
+            "}\n"
+            "\n"
+            "// TODO: 实现 OnAbout: 弹一个 MessageBox\n"
+            "// ==========================================================\n"
+            + _APP_TAIL
+        ),
+        solution=(
+            "#include <afxwin.h>\n"
+            "\n"
+            "#define IDM_ABOUT 1001                  // 菜单命令 ID\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"菜单练习\"); }\n"
+            "    afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);\n"
+            "    afx_msg void OnAbout();\n"
+            "    CMenu m_menu;\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "    ON_WM_CREATE()\n"
+            "    ON_COMMAND(IDM_ABOUT, &CMainWnd::OnAbout)\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "int CMainWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)\n"
+            "{\n"
+            "    if (CFrameWnd::OnCreate(lpCreateStruct) == -1) return -1;\n"
+            "\n"
+            "    m_menu.CreateMenu();                             // 动态建菜单\n"
+            "    m_menu.AppendMenu(MF_STRING, IDM_ABOUT, \"关于\");\n"
+            "    SetMenu(&m_menu);                                // 挂到窗口\n"
+            "    return 0;\n"
+            "}\n"
+            "\n"
+            "void CMainWnd::OnAbout()\n"
+            "{\n"
+            "    MessageBox(\"这是动态创建的菜单项\", \"菜单练习\", MB_OK);\n"
+            "}\n"
+            + _APP_TAIL
+        ),
+        checks=[
+            {"pattern": r"#define\s+IDM_\w+", "hint": "用 #define 定义菜单命令 ID"},
+            {"pattern": r"\bCreateMenu\s*\(|\bCreatePopupMenu\s*\(", "hint": "用 CMenu 动态创建菜单"},
+            {"pattern": r"\bAppendMenu\s*\(", "hint": "用 AppendMenu 添加菜单项"},
+            {"pattern": r"\bON_COMMAND\s*\(", "hint": "消息映射表里要有 ON_COMMAND(ID, handler)"},
+            {"pattern": r"\bSetMenu\s*\(", "hint": "用 SetMenu 把菜单挂到窗口"},
+        ],
+    ),
+    # ---------------------------------------------------------------- v10
+    _p(
+        id="v10",
+        slug="modal-dialog",
+        title="模态对话框与 DDX（教材 5.3）",
+        topics=["对话框资源", "模态对话框"],
+        framework="mfc",
+        subsystem="windows",
+        needs_resource=True,    # 需要 .rc 资源(IDD/IDC), 纯 main.cpp 只做要点检查
+        desc=(
+            "教材 5.3: 模态对话框用 DoModal 阻塞运行, 返回 IDOK/IDCANCEL; "
+            "控件与成员变量的同步靠 DDX —— UpdateData(TRUE) 把控件值收进变量, "
+            "UpdateData(FALSE) 把变量值刷到控件。"
+            "本题按教材写法补全一个登录对话框类(资源 ID 来自 resource.h, "
+            "真实编译需要在 VS 里用资源编辑器建 .rc, 所以本题按要点检查评分)。"
+        ),
+        require=[
+            "CLoginDlg 派生自 CDialogEx, 构造函数传对话框资源 ID: CDialogEx(IDD_LOGIN)。",
+            "成员变量 CString m_user; 在 DoDataExchange 里用 DDX_Text(pDX, IDC_EDIT_USER, m_user) 绑定。",
+            "OnInitDialog 先调用 CDialogEx::OnInitDialog(), 再用 SetDlgItemText 预填 \"admin\"。",
+            "OnOK 里先 UpdateData(TRUE) 收输入, 再调基类 CDialogEx::OnOK()。",
+            "给出使用代码: CLoginDlg dlg; if (dlg.DoModal() == IDOK) { /* 用 dlg.m_user */ }",
+        ],
+        io="图形界面程序: 弹出模态登录对话框, 点确定后返回输入的用户名。",
+        hints=[
+            "IDD_LOGIN / IDC_EDIT_USER 由资源编辑器生成在 resource.h 里, 这里按教材习惯 #include \"resource.h\"。",
+            "DoModal 的返回值就是 IDOK / IDCANCEL —— 先判断再读成员变量。",
+            "非模态对话框不用 DoModal, 而是 Create(IDD, this) + ShowWindow(SW_SHOW); 且对象必须活到关闭。",
+        ],
+        checklist=[
+            "构造函数把资源 ID 传给基类了吗?",
+            "DoDataExchange 里调用基类版本了吗?",
+            "UpdateData 的方向(TRUE 收 / FALSE 刷)用对了吗?",
+        ],
+        skeleton=(
+            "#include <afxwin.h>\n"
+            "#include \"resource.h\"        // IDD_LOGIN / IDC_EDIT_USER 由资源编辑器生成\n"
+            "\n"
+            "// ================== TODO: 按教材 5.3 补全登录对话框 ==================\n"
+            "class CLoginDlg : public CDialogEx {\n"
+            "public:\n"
+            "    CString m_user;                 // 与编辑框绑定\n"
+            "    // TODO: 构造函数: 把 IDD_LOGIN 传给基类\n"
+            "    // TODO: OnInitDialog: 调基类 -> 预填 \"admin\"\n"
+            "    // TODO: OnOK: UpdateData(TRUE) -> 调基类\n"
+            "protected:\n"
+            "    // TODO: DoDataExchange: 调基类 -> DDX_Text 绑定 IDC_EDIT_USER\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "\n"
+            "BEGIN_MESSAGE_MAP(CLoginDlg, CDialogEx)\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "// TODO: 写使用代码: CLoginDlg dlg; if (dlg.DoModal() == IDOK) { ... }\n"
+            "// ====================================================================\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"对话框练习\"); }\n"
+            "    afx_msg void OnOpenDlg();\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "void CMainWnd::OnOpenDlg()\n"
+            "{\n"
+            "    CLoginDlg dlg;                                  // 模态: 栈对象正好\n"
+            "    if (dlg.DoModal() == IDOK)\n"
+            "        SetWindowText(\"欢迎, \" + dlg.m_user);\n"
+            "}\n"
+            + _APP_TAIL
+        ),
+        solution=(
+            "#include <afxwin.h>\n"
+            "#include \"resource.h\"\n"
+            "\n"
+            "class CLoginDlg : public CDialogEx {\n"
+            "public:\n"
+            "    CString m_user;\n"
+            "    CLoginDlg() : CDialogEx(IDD_LOGIN) {}          // 资源 ID 交给基类\n"
+            "\n"
+            "    virtual BOOL OnInitDialog()\n"
+            "    {\n"
+            "        CDialogEx::OnInitDialog();                  // 先让基类初始化\n"
+            "        SetDlgItemText(IDC_EDIT_USER, \"admin\");     // 预填\n"
+            "        return TRUE;\n"
+            "    }\n"
+            "\n"
+            "    virtual void OnOK()\n"
+            "    {\n"
+            "        UpdateData(TRUE);                           // 控件 -> 成员变量\n"
+            "        CDialogEx::OnOK();\n"
+            "    }\n"
+            "\n"
+            "protected:\n"
+            "    virtual void DoDataExchange(CDataExchange* pDX)\n"
+            "    {\n"
+            "        CDialogEx::DoDataExchange(pDX);\n"
+            "        DDX_Text(pDX, IDC_EDIT_USER, m_user);       // 绑定编辑框与成员\n"
+            "    }\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "\n"
+            "BEGIN_MESSAGE_MAP(CLoginDlg, CDialogEx)\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"对话框练习\"); }\n"
+            "    afx_msg void OnOpenDlg();\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "void CMainWnd::OnOpenDlg()\n"
+            "{\n"
+            "    CLoginDlg dlg;                                  // 模态对话框: 栈对象合适\n"
+            "    if (dlg.DoModal() == IDOK)                      // 阻塞直到关闭\n"
+            "        SetWindowText(\"欢迎, \" + dlg.m_user);\n"
+            "}\n"
+            + _APP_TAIL
+        ),
+        checks=[
+            {"pattern": r"\bCDialogEx\b|\bCDialog\b", "hint": "对话框类要派生自 CDialogEx/CDialog"},
+            {"pattern": r"\bDoModal\b", "hint": "模态对话框用 DoModal 打开"},
+            {"pattern": r"\bDoDataExchange\b", "hint": "要实现 DoDataExchange 做 DDX 绑定"},
+            {"pattern": r"\bDDX_Text\s*\(", "hint": "用 DDX_Text 绑定控件与成员变量"},
+            {"pattern": r"\bUpdateData\s*\(\s*TRUE\s*\)", "hint": "OnOK 里要 UpdateData(TRUE) 收集输入"},
+            {"pattern": r"\bOnInitDialog\b", "hint": "要实现 OnInitDialog 做初始化"},
+        ],
+    ),
+    # ---------------------------------------------------------------- v11
+    _p(
+        id="v11",
+        slug="bitmap-bitblt",
+        title="位图与 BitBlt（教材 5.2）",
+        topics=["位图资源", "BitBlt"],
+        framework="mfc",
+        subsystem="windows",
+        desc=(
+            "教材 5.2: 位图不能直接画到窗口 —— 要先进「兼容 DC」中转, 再用 BitBlt 贴到目标 DC。"
+            "本题不用资源文件, 用 CreateCompatibleBitmap 在内存里建一块位图, "
+            "在它上面画点东西, 再 BitBlt 到窗口上。"
+        ),
+        require=[
+            "创建 CBitmap 并用 CreateCompatibleBitmap(&dc, 200, 100) 建立位图。",
+            "用 CDC 的 CreateCompatibleDC(&dc) 建立兼容 DC。",
+            "把位图 SelectObject 进兼容 DC(保存旧位图指针)。",
+            "在兼容 DC 上画一个矩形(证明内存绘制)。",
+            "用 dc.BitBlt(10, 10, 200, 100, &memDC, 0, 0, SRCCOPY) 把位图贴到窗口。",
+            "绘制结束后把旧位图 SelectObject 回兼容 DC。",
+        ],
+        io="图形界面程序: 窗口左上角出现一块从内存位图贴过来的矩形图案。",
+        hints=[
+            "兼容 DC 是「离屏画布」: 在位图上画完再整块贴到屏幕, 这就是双缓冲的基础。",
+            "BitBlt 的参数顺序: 目标 x,y, 宽, 高, 源 DC 指针, 源 x,y, 光栅操作 SRCCOPY。",
+            "位图和兼容 DC 都是 GDI 对象, 用完恢复旧对象, 否则句柄泄漏。",
+        ],
+        checklist=[
+            "CBitmap / CreateCompatibleDC / SelectObject / BitBlt 四件套齐了吗?",
+            "BitBlt 的宽高与位图尺寸一致吗?",
+            "旧位图恢复了吗?",
+        ],
+        skeleton=(
+            "#include <afxwin.h>\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"位图与 BitBlt\"); }\n"
+            "    afx_msg void OnPaint();\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "    ON_WM_PAINT()\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "// ================== TODO: 按教材 5.2 完成 ==================\n"
+            "void CMainWnd::OnPaint()\n"
+            "{\n"
+            "    CPaintDC dc(this);\n"
+            "\n"
+            "    // TODO: 1) CBitmap bmp; bmp.CreateCompatibleBitmap(&dc, 200, 100);\n"
+            "    // TODO: 2) CDC memDC; memDC.CreateCompatibleDC(&dc);\n"
+            "    // TODO: 3) 位图 SelectObject 进 memDC(记住旧位图)\n"
+            "    // TODO: 4) 在 memDC 上画一个矩形\n"
+            "    // TODO: 5) dc.BitBlt(10, 10, 200, 100, &memDC, 0, 0, SRCCOPY);\n"
+            "    // TODO: 6) 恢复旧位图\n"
+            "}\n"
+            "// ==========================================================\n"
+            + _APP_TAIL
+        ),
+        solution=(
+            "#include <afxwin.h>\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"位图与 BitBlt\"); }\n"
+            "    afx_msg void OnPaint();\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "    ON_WM_PAINT()\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "void CMainWnd::OnPaint()\n"
+            "{\n"
+            "    CPaintDC dc(this);\n"
+            "\n"
+            "    CBitmap bmp;\n"
+            "    bmp.CreateCompatibleBitmap(&dc, 200, 100);      // 内存位图\n"
+            "    CDC memDC;\n"
+            "    memDC.CreateCompatibleDC(&dc);                  // 兼容 DC\n"
+            "    CBitmap* oldBmp = memDC.SelectObject(&bmp);     // 位图进兼容 DC\n"
+            "\n"
+            "    CBrush brush(RGB(0, 128, 255));\n"
+            "    CBrush* oldBrush = memDC.SelectObject(&brush);\n"
+            "    memDC.Rectangle(0, 0, 199, 99);                 // 在内存里画\n"
+            "    memDC.SelectObject(oldBrush);\n"
+            "\n"
+            "    dc.BitBlt(10, 10, 200, 100, &memDC, 0, 0, SRCCOPY);   // 贴到窗口\n"
+            "    memDC.SelectObject(oldBmp);                     // 恢复旧位图\n"
+            "}\n"
+            + _APP_TAIL
+        ),
+        checks=[
+            {"pattern": r"\bCBitmap\b", "hint": "要创建 CBitmap 位图对象"},
+            {"pattern": r"\bCreateCompatibleDC\s*\(", "hint": "要建立兼容 DC(CreateCompatibleDC)"},
+            {"pattern": r"\bCreateCompatibleBitmap\s*\(|\bLoadBitmap\s*\(", "hint": "用 CreateCompatibleBitmap/LoadBitmap 准备位图"},
+            {"pattern": r"\bSelectObject\s*\(", "hint": "位图要 SelectObject 进兼容 DC"},
+            {"pattern": r"\bBitBlt\s*\(", "hint": "用 BitBlt 把位图贴到窗口 DC"},
+            {"pattern": r"SelectObject\s*\(\s*old", "hint": "用完把旧位图恢复回去"},
+        ],
+    ),
+    # ---------------------------------------------------------------- v12
+    _p(
+        id="v12",
+        slug="button-edit",
+        title="按钮与编辑框（教材 6.2 / 6.5）",
+        topics=["按钮控件", "编辑框"],
+        framework="mfc",
+        subsystem="windows",
+        desc=(
+            "教材 6.2/6.5: 控件也是窗口 —— 程序化创建按钮/编辑框, 按钮点击用 ON_BN_CLICKED "
+            "映射处理函数, 编辑框内容用 GetDlgItemText/SetDlgItemText 读写。"
+            "本题不使用资源编辑器, 全部用代码创建, 所以在自己程序里 #define 控件 ID 即可。"
+        ),
+        require=[
+            "用 #define 定义两个控件 ID(如 IDC_EDIT_NAME / IDC_BTN_HELLO / IDC_STATIC_SHOW)。",
+            "在 OnCreate 里创建编辑框(CEdit 或直接用 CreateWindow)与按钮(CButton::Create)。",
+            "按钮创建样式包含 WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON。",
+            "消息映射表里用 ON_BN_CLICKED(IDC_BTN_HELLO, &CMainWnd::OnHello) 挂按钮点击。",
+            "OnHello 里用 GetDlgItemText 取编辑框内容, 拼上问候语后用 SetDlgItemText 显示。",
+        ],
+        io="图形界面程序: 输入名字点按钮, 结果文本出现在窗口里。",
+        hints=[
+            "按钮点击通知是 BN_CLICKED, 对应映射宏 ON_BN_CLICKED。",
+            "GetDlgItemText(IDC, str) / SetDlgItemText(IDC, str) 是 CWnd 的便捷函数, 不用自己找句柄。",
+            "创建控件一定要带 WS_VISIBLE, 否则控件存在但看不见。",
+        ],
+        checklist=[
+            "按钮样式里有 WS_VISIBLE 吗?",
+            "ON_BN_CLICKED 的 ID 与创建时传的 ID 一致吗?",
+            "取到的文本有没有拼对?",
+        ],
+        skeleton=(
+            "#include <afxwin.h>\n"
+            "\n"
+            "// TODO: #define 控件 ID(IDC_EDIT_NAME / IDC_BTN_HELLO / IDC_STATIC_SHOW)\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"按钮与编辑框\"); }\n"
+            "    afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);\n"
+            "    // TODO: 声明 OnHello(afx_msg void)\n"
+            "    CEdit m_edit;\n"
+            "    CButton m_btn;\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "    ON_WM_CREATE()\n"
+            "    // TODO: 挂上 ON_BN_CLICKED(IDC_BTN_HELLO, &CMainWnd::OnHello)\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "// ================== TODO: 按教材 6.2 / 6.5 完成 ==================\n"
+            "int CMainWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)\n"
+            "{\n"
+            "    if (CFrameWnd::OnCreate(lpCreateStruct) == -1) return -1;\n"
+            "    // TODO: 创建编辑框(CRect(20,20,220,50))与按钮(CRect(20,60,120,95))\n"
+            "    return 0;\n"
+            "}\n"
+            "\n"
+            "// TODO: 实现 OnHello: GetDlgItemText 取名字 -> 拼接 -> SetDlgItemText\n"
+            "// =================================================================\n"
+            + _APP_TAIL
+        ),
+        solution=(
+            "#include <afxwin.h>\n"
+            "\n"
+            "#define IDC_EDIT_NAME   2001\n"
+            "#define IDC_BTN_HELLO   2002\n"
+            "#define IDC_STATIC_SHOW 2003\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"按钮与编辑框\"); }\n"
+            "    afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);\n"
+            "    afx_msg void OnHello();\n"
+            "    CEdit m_edit;\n"
+            "    CButton m_btn;\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "    ON_WM_CREATE()\n"
+            "    ON_BN_CLICKED(IDC_BTN_HELLO, &CMainWnd::OnHello)\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "int CMainWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)\n"
+            "{\n"
+            "    if (CFrameWnd::OnCreate(lpCreateStruct) == -1) return -1;\n"
+            "\n"
+            "    m_edit.Create(WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,\n"
+            "                  CRect(20, 20, 220, 50), this, IDC_EDIT_NAME);\n"
+            "    m_btn.Create(\"打招呼\", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,\n"
+            "                 CRect(20, 60, 120, 95), this, IDC_BTN_HELLO);\n"
+            "    return 0;\n"
+            "}\n"
+            "\n"
+            "void CMainWnd::OnHello()\n"
+            "{\n"
+            "    CString name;\n"
+            "    GetDlgItemText(IDC_EDIT_NAME, name);            // 读编辑框\n"
+            "    if (name.IsEmpty()) name = \"同学\";\n"
+            "    SetDlgItemText(IDC_STATIC_SHOW, \"你好, \" + name + \"!\");   // 显示\n"
+            "}\n"
+            + _APP_TAIL
+        ),
+        checks=[
+            {"pattern": r"#define\s+IDC_\w+", "hint": "用 #define 定义控件 ID"},
+            {"pattern": r"\bCButton\b|\bCreateWindow\w*\s*\(", "hint": "要创建按钮控件(CButton)"},
+            {"pattern": r"\bWS_VISIBLE\b", "hint": "控件样式要包含 WS_VISIBLE"},
+            {"pattern": r"\bON_BN_CLICKED\s*\(", "hint": "用 ON_BN_CLICKED 挂按钮点击"},
+            {"pattern": r"\bGetDlgItemText\s*\(", "hint": "用 GetDlgItemText 读编辑框内容"},
+        ],
+    ),
+    # ---------------------------------------------------------------- v13
+    _p(
+        id="v13",
+        slug="listbox-sel",
+        title="列表框与选择变化（教材 6.6）",
+        topics=["列表框控件", "组合框控件"],
+        framework="mfc",
+        subsystem="windows",
+        desc=(
+            "教材 6.6: 列表框用 AddString 装数据, GetCurSel 取当前选中(没选中返回 LB_ERR), "
+            "GetLBText 把文本取出来; 选中变化会发 LBN_SELCHANGE 通知。"
+            "本题做一个「选语言」列表框: 选中后把结果展示出来。"
+        ),
+        require=[
+            "用 #define 定义列表框与显示控件的 ID。",
+            "在 OnCreate 里创建列表框(CListBox::Create, 样式含 WS_VISIBLE | LBS_NOTIFY)。",
+            "用 AddString 至少装入三项(如 C++ / C# / Python)。",
+            "消息映射表里挂 ON_LBN_SELCHANGE(IDC_LIST_LANG, &CMainWnd::OnSelChange)。",
+            "OnSelChange 里 GetCurSel 先判 LB_ERR, 再 GetLBText 取文本并显示。",
+        ],
+        io="图形界面程序: 列表里选择一项, 窗口里显示选中项。",
+        hints=[
+            "创建列表框的样式: WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY —— 没有 LBS_NOTIFY 收不到选中通知。",
+            "GetCurSel() == LB_ERR 表示当前没有选中项, 必须先判断。",
+            "SetCurSel(0) 可以预先选中第一项。",
+        ],
+        checklist=[
+            "列表框创建样式里有 LBS_NOTIFY 吗?",
+            "取选中前判 LB_ERR 了吗?",
+            "ON_LBN_SELCHANGE 的 ID 与创建一致吗?",
+        ],
+        skeleton=(
+            "#include <afxwin.h>\n"
+            "\n"
+            "// TODO: #define IDC_LIST_LANG / IDC_STATIC_SHOW\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"列表框练习\"); }\n"
+            "    afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);\n"
+            "    // TODO: 声明 OnSelChange(afx_msg void)\n"
+            "    CListBox m_list;\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "    ON_WM_CREATE()\n"
+            "    // TODO: 挂上 ON_LBN_SELCHANGE(IDC_LIST_LANG, &CMainWnd::OnSelChange)\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "// ================== TODO: 按教材 6.6 完成 ==================\n"
+            "int CMainWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)\n"
+            "{\n"
+            "    if (CFrameWnd::OnCreate(lpCreateStruct) == -1) return -1;\n"
+            "    // TODO: 创建列表框并 AddString 三项(C++ / C# / Python)\n"
+            "    return 0;\n"
+            "}\n"
+            "\n"
+            "// TODO: 实现 OnSelChange: GetCurSel 判 LB_ERR -> GetLBText -> 显示\n"
+            "// ===========================================================\n"
+            + _APP_TAIL
+        ),
+        solution=(
+            "#include <afxwin.h>\n"
+            "\n"
+            "#define IDC_LIST_LANG   3001\n"
+            "#define IDC_STATIC_SHOW 3002\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"列表框练习\"); }\n"
+            "    afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);\n"
+            "    afx_msg void OnSelChange();\n"
+            "    CListBox m_list;\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "    ON_WM_CREATE()\n"
+            "    ON_LBN_SELCHANGE(IDC_LIST_LANG, &CMainWnd::OnSelChange)\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "int CMainWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)\n"
+            "{\n"
+            "    if (CFrameWnd::OnCreate(lpCreateStruct) == -1) return -1;\n"
+            "\n"
+            "    m_list.Create(WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY,\n"
+            "                  CRect(20, 20, 220, 200), this, IDC_LIST_LANG);\n"
+            "    m_list.AddString(\"C++\");\n"
+            "    m_list.AddString(\"C#\");\n"
+            "    m_list.AddString(\"Python\");\n"
+            "    m_list.SetCurSel(0);                            // 预选第一项\n"
+            "    return 0;\n"
+            "}\n"
+            "\n"
+            "void CMainWnd::OnSelChange()\n"
+            "{\n"
+            "    int index = m_list.GetCurSel();\n"
+            "    if (index == LB_ERR)                            // 先判 -1\n"
+            "        return;\n"
+            "    CString text;\n"
+            "    m_list.GetLBText(index, text);\n"
+            "    SetDlgItemText(IDC_STATIC_SHOW, \"你选了: \" + text);\n"
+            "}\n"
+            + _APP_TAIL
+        ),
+        checks=[
+            {"pattern": r"\bCListBox\b", "hint": "要创建 CListBox 列表框"},
+            {"pattern": r"\bAddString\s*\(", "hint": "用 AddString 装入列表项"},
+            {"pattern": r"\bGetCurSel\s*\(", "hint": "用 GetCurSel 取当前选中"},
+            {"pattern": r"\bLB_ERR\b", "hint": "取选中项前要判 LB_ERR(-1)"},
+            {"pattern": r"\bON_LBN_SELCHANGE\s*\(", "hint": "用 ON_LBN_SELCHANGE 挂选中变化"},
+            {"pattern": r"\bLBS_NOTIFY\b|\bLBS_SORT\b", "hint": "列表框样式要通知位(LBS_NOTIFY)"},
+        ],
+    ),
+    # ---------------------------------------------------------------- v14
+    _p(
+        id="v14",
+        slug="progress-timer",
+        title="进度条与定时器（教材 6.8）",
+        topics=["进度条", "滚动条控件"],
+        framework="mfc",
+        subsystem="windows",
+        desc=(
+            "教材 6.3/6.8: 进度条围绕「范围 + 位置」工作(SetRange32 / SetPos); "
+            "让它动起来最常见的办法是 SetTimer + OnTimer 定时推进。"
+            "本题做一个循环推进的进度条。"
+        ),
+        require=[
+            "用 #define 定义进度条的 ID。",
+            "在 OnCreate 里创建进度条(CProgressCtrl::Create)。",
+            "用 SetRange32(0, 100) 设置范围。",
+            "用 SetTimer(1, 100, NULL) 启动 100ms 的定时器。",
+            "消息映射表里挂 ON_WM_TIMER(); 在 OnTimer 里用 GetPos/SetPos 推进进度(取模循环)。",
+        ],
+        io="图形界面程序: 窗口里的进度条每 100ms 前进一格, 满了从头再来。",
+        hints=[
+            "SetTimer(1, 100, NULL) 的第一个参数是定时器 ID, OnTimer 的 nIDEvent 就是它。",
+            "推进用 m_progress.SetPos((m_progress.GetPos() + 5) % 105) 之类的取模, 避免超出范围。",
+            "OnTimer 处理完记得调用基类的 CFrameWnd::OnTimer(nIDEvent)。",
+        ],
+        checklist=[
+            "SetRange32 与 SetPos 都写了吗?",
+            "ON_WM_TIMER 挂了吗? OnTimer 里判了定时器 ID 吗?",
+            "SetPos 的值会超出上限吗?",
+        ],
+        skeleton=(
+            "#include <afxwin.h>\n"
+            "\n"
+            "// TODO: #define IDC_PROGRESS 4001\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"进度条练习\"); }\n"
+            "    afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);\n"
+            "    afx_msg void OnTimer(UINT_PTR nIDEvent);\n"
+            "    CProgressCtrl m_progress;\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "    ON_WM_CREATE()\n"
+            "    ON_WM_TIMER()\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "// ================== TODO: 按教材 6.8 完成 ==================\n"
+            "int CMainWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)\n"
+            "{\n"
+            "    if (CFrameWnd::OnCreate(lpCreateStruct) == -1) return -1;\n"
+            "    // TODO: 创建进度条 + SetRange32(0, 100) + SetTimer(1, 100, NULL)\n"
+            "    return 0;\n"
+            "}\n"
+            "\n"
+            "// TODO: 实现 OnTimer: 推进 m_progress 的位置(取模循环), 并调用基类\n"
+            "// ==========================================================\n"
+            + _APP_TAIL
+        ),
+        solution=(
+            "#include <afxwin.h>\n"
+            "\n"
+            "#define IDC_PROGRESS 4001\n"
+            "\n"
+            "class CMyApp : public CWinApp {\n"
+            "public:\n"
+            "    virtual BOOL InitInstance();\n"
+            "};\n"
+            "class CMainWnd : public CFrameWnd {\n"
+            "public:\n"
+            "    CMainWnd() { Create(NULL, \"进度条练习\"); }\n"
+            "    afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);\n"
+            "    afx_msg void OnTimer(UINT_PTR nIDEvent);\n"
+            "    CProgressCtrl m_progress;\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "BEGIN_MESSAGE_MAP(CMainWnd, CFrameWnd)\n"
+            "    ON_WM_CREATE()\n"
+            "    ON_WM_TIMER()\n"
+            "END_MESSAGE_MAP()\n"
+            "\n"
+            "int CMainWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)\n"
+            "{\n"
+            "    if (CFrameWnd::OnCreate(lpCreateStruct) == -1) return -1;\n"
+            "\n"
+            "    m_progress.Create(WS_CHILD | WS_VISIBLE,\n"
+            "                      CRect(20, 20, 320, 45), this, IDC_PROGRESS);\n"
+            "    m_progress.SetRange32(0, 100);                  // 范围 0~100\n"
+            "    SetTimer(1, 100, NULL);                         // 100ms 定时器\n"
+            "    return 0;\n"
+            "}\n"
+            "\n"
+            "void CMainWnd::OnTimer(UINT_PTR nIDEvent)\n"
+            "{\n"
+            "    if (nIDEvent == 1) {\n"
+            "        int pos = m_progress.GetPos() + 5;\n"
+            "        if (pos > 100) pos = 0;                     // 取模循环\n"
+            "        m_progress.SetPos(pos);\n"
+            "    }\n"
+            "    CFrameWnd::OnTimer(nIDEvent);                   // 交回基类\n"
+            "}\n"
+            + _APP_TAIL
+        ),
+        checks=[
+            {"pattern": r"\bCProgressCtrl\b", "hint": "要用 CProgressCtrl 进度条控件"},
+            {"pattern": r"\bSetRange32\s*\(|\bSetRange\s*\(", "hint": "用 SetRange32/SetRange 设置进度范围"},
+            {"pattern": r"\bSetPos\s*\(", "hint": "用 SetPos 推进进度位置"},
+            {"pattern": r"\bSetTimer\s*\(", "hint": "用 SetTimer 启动定时器"},
+            {"pattern": r"\bON_WM_TIMER\b", "hint": "消息映射表里要有 ON_WM_TIMER()"},
+            {"pattern": r"\bOnTimer\b", "hint": "要实现 OnTimer 响应定时器"},
+        ],
+    ),
 ]

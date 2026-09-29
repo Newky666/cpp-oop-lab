@@ -564,7 +564,8 @@ class JudgeReport:
         self.seconds = 0.0
         self.source_path = ""
         self.checks: List[CheckResult] = []      # 静态检查结果(教材类题目)
-        self.static_only = False                 # True: 未真编译(缺 MFC), 只看静态检查
+        self.static_only = False                 # True: 未真编译, 只看静态检查
+        self.static_reason = ""                  # "" | "mfc_missing" | "needs_resource"
 
     @property
     def total(self) -> int:
@@ -621,10 +622,15 @@ def judge(problem: Dict[str, Any], source_path: str, toolchain: Optional[Toolcha
     report.checks = run_checks(source_text, problem.get("checks"))
 
     framework = str(problem.get("framework") or "console").lower()
-    if framework == "mfc" and detect_mfc() is None:
-        # 没装 MFC: 编译不了, 改为「要点检查」并在报告里给出安装路径
+    needs_resource = bool(problem.get("needs_resource"))
+    if framework == "mfc" and (needs_resource or detect_mfc() is None):
+        # 两种情况都改为「要点检查」:
+        #   1) needs_resource 的题(如对话框)需要 .rc 资源工程, 纯 main.cpp 编不过;
+        #   2) 没装 MFC 组件, 编译不了。
         report.static_only = True
-        report.toolchain_label = "未编译(缺 MFC 组件)"
+        report.static_reason = "needs_resource" if needs_resource else "mfc_missing"
+        report.toolchain_label = ("未编译(需要 .rc 资源工程)" if needs_resource
+                                  else "未编译(缺 MFC 组件)")
         report.seconds = time.time() - started
         return report
 
@@ -693,13 +699,17 @@ def verify_solution(problem: Dict[str, Any], toolchain: Optional[Toolchain] = No
     if not solution.strip():
         report.compile_log = "本题没有参考解"
         return report
-    # MFC 题: 没装 MFC 组件时无法真编译, 明确跳过(selftest 汇总里单独统计);
-    # 但参考解仍要过一遍 checks —— 规则本身写错了要能当场发现。
+    # MFC 题: 没装 MFC 组件、或题目需要 .rc 资源工程时无法真编译, 明确跳过
+    # (selftest 汇总里单独统计); 但参考解仍要过一遍 checks —— 规则写错了要当场发现。
     framework = str(problem.get("framework") or "console").lower()
-    if framework == "mfc" and detect_mfc() is None:
+    needs_resource = bool(problem.get("needs_resource"))
+    if framework == "mfc" and (needs_resource or detect_mfc() is None):
         report.static_only = True
+        report.static_reason = "needs_resource" if needs_resource else "mfc_missing"
         report.checks = run_checks(solution, problem.get("checks"))
-        report.compile_log = "跳过: 未安装 MFC 组件——" + MFC_INSTALL_HINT
+        report.compile_log = ("跳过: 本题需要 .rc 资源工程(在 VS 里用资源编辑器建)"
+                              if needs_resource else
+                              "跳过: 未安装 MFC 组件——" + MFC_INSTALL_HINT)
         return report
     compiled = compile_text(chain, solution, tmp, problem=problem)
     report.compiled = compiled.ok
@@ -747,8 +757,13 @@ def render_report(report: JudgeReport, max_diff: int = 3,
 
     if report.static_only:
         lines.append("")
-        lines.append(oc.color("未安装 MFC 组件, 本次跳过编译 —— 只做要点检查。", "yellow"))
-        lines.append("     · 安装后可真编译: " + MFC_INSTALL_HINT)
+        if report.static_reason == "needs_resource":
+            lines.append(oc.color(
+                "本题需要 .rc 资源工程(VS 里用资源编辑器建对话框/控件资源), "
+                "纯 main.cpp 跳过编译 —— 只做要点检查。", "yellow"))
+        else:
+            lines.append(oc.color("未安装 MFC 组件, 本次跳过编译 —— 只做要点检查。", "yellow"))
+            lines.append("     · 安装后可真编译: " + MFC_INSTALL_HINT)
         if report.checks:
             lines.extend(render_checks(report.checks))
         else:

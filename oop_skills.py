@@ -709,6 +709,231 @@ SKILLS: List[Dict[str, Any]] = [
         ),
         "check": "字体选进 DC 了吗? 旧字体恢复了吗? 背景模式设成透明了吗?",
     },
+    {
+        "id": "K24", "level": 4, "name": "菜单与加速键",
+        "keywords": ["菜单资源", "菜单消息", "加速键", "命令消息", "ON_COMMAND",
+                     "UPDATE_COMMAND_UI", "CMenu", "快捷菜单"],
+        "summary": "点击菜单项发出的是「命令消息」(WM_COMMAND), 用 ON_COMMAND 把命令 ID 挂到处理函数; 加速键与菜单共用同一个 ID。",
+        "points": [
+            "每个菜单项有一个命令 ID(资源里 IDM_/ID_ 开头); 点击 → WM_COMMAND → 映射宏 ON_COMMAND(ID, 处理函数)。",
+            "菜单项状态(变灰/打勾)用 ON_UPDATE_COMMAND_UI 在菜单弹出前同步, 不在 ON_COMMAND 里改。",
+            "加速键表把 Ctrl+S 这类组合映射到同一个命令 ID —— 加一组快捷键不用改任何代码。",
+            "程序里动态建菜单用 CMenu: CreateMenu/AppendMenu + SetMenu; 右键快捷菜单用 TrackPopupMenu。",
+        ],
+        "pitfalls": [
+            "资源里改了菜单 ID 却忘了改代码里的 ID → 点了没反应;",
+            "ON_COMMAND 写错消息映射表(应该写在拥有该处理函数的类里);",
+            "把动态菜单的 CMenu 对象建成局部变量 → 函数退出菜单就没了(要让它活到用完之后)。",
+        ],
+        "example": (
+            "#include <afxwin.h>\n"
+            "// 消息映射表里: ON_COMMAND(IDM_ABOUT, &CMainWnd::OnAbout)\n"
+            "// 类声明里:    afx_msg void OnAbout();\n"
+            "void CMainWnd::OnAbout()\n"
+            "{\n"
+            "    MessageBox(\"这是关于对话框\", \"关于\", MB_OK);\n"
+            "}\n"
+            "// 动态建菜单(不用资源):\n"
+            "//   CMenu menu; menu.CreateMenu();\n"
+            "//   menu.AppendMenu(MF_STRING, IDM_ABOUT, \"关于\");\n"
+            "//   SetMenu(&menu);"
+        ),
+        "check": "菜单项的命令 ID 与 ON_COMMAND 里写的一致吗? 状态更新用的是更新命令 UI 吗?",
+    },
+    {
+        "id": "K25", "level": 4, "name": "对话框与 DDX 数据交换",
+        "keywords": ["对话框资源", "模态对话框", "非模态对话框", "DoModal",
+                     "CDialogEx", "OnInitDialog", "UpdateData", "DDX"],
+        "summary": "对话框分模态(DoModal 阻塞)与非模态(Create 后并存); 控件与成员变量之间的同步靠 DDX, UpdateData 是那道闸门。",
+        "points": [
+            "模态对话框: 构造函数传资源 ID, DoModal() 阻塞运行, 返回 IDOK / IDCANCEL。",
+            "非模态对话框: Create(IDD, this) + ShowWindow(SW_SHOW); 对象必须活到对话框关闭(常 new, 自删用 PostNcDestroy)。",
+            "DDX 在 DoDataExchange 里写: DDX_Text(pDX, IDC_EDIT_NAME, m_name) 把控件和成员变量绑定。",
+            "UpdateData(TRUE): 控件 → 变量(取输入); UpdateData(FALSE): 变量 → 控件(显示); 不调用就读到旧值。",
+            "OnInitDialog 里做初始化(默认值/焦点), 必须调用基类的 CDialogEx::OnInitDialog()。",
+        ],
+        "pitfalls": [
+            "非模态对话框用栈对象 → 函数一返回对象就析构, 对话框瞬间消失;",
+            "读成员变量前忘了 UpdateData(TRUE) → 拿到的还是上次的值;",
+            "OnInitDialog 忘了调基类版本 → 控件不初始化、焦点不对。",
+        ],
+        "example": (
+            "#include <afxwin.h>\n"
+            "#include \"resource.h\"          // 对话框控件 ID 在资源头文件里\n"
+            "class CLoginDlg : public CDialogEx {\n"
+            "public:\n"
+            "    CString m_user;                 // 与编辑框绑定\n"
+            "    CLoginDlg() : CDialogEx(IDD_LOGIN) {}\n"
+            "    virtual BOOL OnInitDialog() {\n"
+            "        CDialogEx::OnInitDialog();  // 先让基类做初始化\n"
+            "        SetDlgItemText(IDC_EDIT_USER, \"admin\");\n"
+            "        return TRUE;\n"
+            "    }\n"
+            "    void OnOK() {\n"
+            "        UpdateData(TRUE);           // 控件 -> 成员变量\n"
+            "        CDialogEx::OnOK();\n"
+            "    }\n"
+            "protected:\n"
+            "    virtual void DoDataExchange(CDataExchange* pDX) {\n"
+            "        CDialogEx::DoDataExchange(pDX);\n"
+            "        DDX_Text(pDX, IDC_EDIT_USER, m_user);\n"
+            "    }\n"
+            "    DECLARE_MESSAGE_MAP()\n"
+            "};\n"
+            "// 使用: CLoginDlg dlg; if (dlg.DoModal() == IDOK) { /* dlg.m_user 已是最新值 */ }"
+        ),
+        "check": "是模态还是非模态? 对象生命周期对不对? UpdateData 的方向(TRUE/FALSE)用对了吗?",
+    },
+    {
+        "id": "K26", "level": 4, "name": "位图与图标资源",
+        "keywords": ["位图资源", "图标资源", "CBitmap", "CreateCompatibleDC", "BitBlt",
+                     "LoadBitmap", "LoadIcon", "SetIcon", "兼容DC"],
+        "summary": "位图不能直接画到窗口, 要先进「兼容 DC」中转, 再用 BitBlt 贴到目标 DC 上。",
+        "points": [
+            "位图显示四步: CBitmap 创建/加载 → CreateCompatibleDC 建兼容 DC → SelectObject 把位图选进兼容 DC → BitBlt 贴到窗口 DC。",
+            "BitBlt(x, y, w, h, &srcDC, srcX, srcY, SRCCOPY): SRCCOPY 是直接复制, 最常用。",
+            "加载位图资源用 LoadBitmap(IDB_XXX); 也可以用 CreateCompatibleBitmap 建一块空白位图自己画。",
+            "应用程序图标是资源 IDR_MAINFRAME; 窗口换图标用 SetIcon(LoadIcon(...)); 任务栏图标同样来自这里。",
+            "兼容 DC 与位图都是 GDI 对象: 用完 SelectObject 恢复旧对象, 再让它们析构, 否则 GDI 泄漏。",
+        ],
+        "pitfalls": [
+            "把位图直接 SelectObject 进窗口 DC 就以为能显示 —— 必须先经兼容 DC;",
+            "兼容 DC 用完不 DeleteDC / 不恢复旧位图 → GDI 资源泄漏;",
+            "BitBlt 的宽高和位图实际尺寸不一致 → 图像被拉伸或只贴出一部分。",
+        ],
+        "example": (
+            "#include <afxwin.h>\n"
+            "void CMainWnd::OnPaint()\n"
+            "{\n"
+            "    CPaintDC dc(this);\n"
+            "    CBitmap bmp;\n"
+            "    bmp.CreateCompatibleBitmap(&dc, 200, 100);   // 建一块 200x100 的位图\n"
+            "    CDC memDC;\n"
+            "    memDC.CreateCompatibleDC(&dc);               // 兼容 DC\n"
+            "    CBitmap* old = memDC.SelectObject(&bmp);     // 位图选进兼容 DC\n"
+            "    memDC.Rectangle(0, 0, 199, 99);              // 在内存里画\n"
+            "    dc.BitBlt(10, 10, 200, 100, &memDC, 0, 0, SRCCOPY);   // 贴到窗口\n"
+            "    memDC.SelectObject(old);                     // 恢复\n"
+            "}"
+        ),
+        "check": "位图走兼容 DC 了吗? BitBlt 的尺寸参数对吗? GDI 对象都恢复了吗?",
+    },
+    {
+        "id": "K27", "level": 4, "name": "基础控件：按钮 / 静态 / 编辑框",
+        "keywords": ["按钮控件", "CButton", "静态控件", "CStatic", "编辑框", "CEdit",
+                     "BN_CLICKED", "ON_BN_CLICKED", "SetDlgItemText", "GetDlgItemText",
+                     "控件通知"],
+        "summary": "控件也是窗口; 操作控件是给它发消息(或调用它的类方法), 控件的事件以「通知消息」回到父窗口。",
+        "points": [
+            "程序化创建: CButton* p = new CButton; p->Create(\"确定\", WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON, rect, this, IDC_OK);",
+            "按钮点击的通知是 BN_CLICKED → 用 ON_BN_CLICKED(IDC_OK, &CMyWnd::OnOk) 映射到处理函数。",
+            "编辑框读写: SetDlgItemText/GetDlgItemText(父窗口便捷函数) 或 CEdit 的 SetWindowText/GetWindowText。",
+            "静态控件 CStatic 用来显示文本/图标, 一般不给输入; 编辑框 CEdit 负责输入。",
+            "通知消息按控件前缀区分: BN_(按钮)/EN_(编辑框)/LBN_(列表框)/CBN_(组合框), 映射宏同名加 ON_。",
+        ],
+        "pitfalls": [
+            "创建控件时忘写 WS_VISIBLE → 控件存在但看不见;",
+            "控件 ID 重复 → GetDlgItem 拿到的是另一个控件;",
+            "在对话框程序里该用资源编辑器 + DDX 放控件, 却在 OnInitDialog 里手写 Create —— 两种方式别混(手写 Create 适合动态控件)。",
+        ],
+        "example": (
+            "#include <afxwin.h>\n"
+            "// 类里: CButton m_btn;  afx_msg void OnClicked();  ON_BN_CLICKED(IDC_BTN, &CMyWnd::OnClicked)\n"
+            "void CMainWnd::OnCreate(LPCREATESTRUCT lpcs)   // 窗口创建时建控件\n"
+            "{\n"
+            "    CFrameWnd::OnCreate(lpcs);\n"
+            "    m_btn.Create(\"点我\", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,\n"
+            "                 CRect(20, 20, 120, 50), this, IDC_BTN);\n"
+            "}\n"
+            "void CMainWnd::OnClicked()\n"
+            "{\n"
+            "    CString name;\n"
+            "    GetDlgItemText(IDC_EDIT_NAME, name);        // 取编辑框内容\n"
+            "    SetDlgItemText(IDC_STATIC_RESULT, \"你好, \" + name);   // 显示到静态控件\n"
+            "}"
+        ),
+        "check": "控件创建时给了 WS_VISIBLE 吗? 通知映射(ON_BN_)挂对了吗? 控件 ID 唯一吗?",
+    },
+    {
+        "id": "K28", "level": 4, "name": "列表框与组合框",
+        "keywords": ["列表框控件", "CListBox", "组合框控件", "CComboBox", "AddString",
+                     "GetCurSel", "SetCurSel", "LBN_SELCHANGE", "CBN_SELCHANGE"],
+        "summary": "列表框是纯列表, 组合框是「编辑框 + 列表」; 常用三件套: AddString 增项 / GetCurSel 取选中 / GetLBText 取文本。",
+        "points": [
+            "AddString 追加并返回索引; InsertString 插到指定位置; ResetContent 清空; GetCount 数项。",
+            "GetCurSel 返回当前选中索引(没有选中返回 LB_ERR = -1); GetLBText(index, str) 取该项文本。",
+            "选中变化通知: 列表框 LBN_SELCHANGE、组合框 CBN_SELCHANGE → ON_LBN_SELCHANGE / ON_CBN_SELCHANGE。",
+            "组合框样式: CBS_DROPDOWN(可编辑)、CBS_DROPDOWNLIST(只选不可编辑)、CBS_SIMPLE(一直展开)。",
+        ],
+        "pitfalls": [
+            "不判断 GetCurSel 的 -1 就直接 GetLBText → 取到空串或断言失败;",
+            "组合框写 LBN_ 通知、列表框写 CBN_ → 消息映射对不上, 毫无反应;",
+            "列表项很多时忘了排序(需要时手动 SortString 或加 LBS_SORT 样式)。",
+        ],
+        "example": (
+            "#include <afxwin.h>\n"
+            "// 类里: CListBox m_list;  afx_msg void OnSelChanged();\n"
+            "//        ON_LBN_SELCHANGE(IDC_LIST, &CMyWnd::OnSelChanged)\n"
+            "void CMainWnd::OnCreate(LPCREATESTRUCT lpcs)\n"
+            "{\n"
+            "    CFrameWnd::OnCreate(lpcs);\n"
+            "    m_list.Create(WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY,\n"
+            "                  CRect(10, 10, 200, 200), this, IDC_LIST);\n"
+            "    m_list.AddString(\"C++\");\n"
+            "    m_list.AddString(\"MFC\");\n"
+            "    m_list.SetCurSel(0);\n"
+            "}\n"
+            "void CMainWnd::OnSelChanged()\n"
+            "{\n"
+            "    int index = m_list.GetCurSel();\n"
+            "    if (index != LB_ERR) {                     // 先判 -1!\n"
+            "        CString text;\n"
+            "        m_list.GetLBText(index, text);\n"
+            "        SetDlgItemText(IDC_STATIC_SHOW, text);\n"
+            "    }\n"
+            "}"
+        ),
+        "check": "取选中项前判了 LB_ERR 吗? 通知宏(LBN_/CBN_)与控件类型匹配吗?",
+    },
+    {
+        "id": "K29", "level": 4, "name": "滚动条与通用控件",
+        "keywords": ["滚动条控件", "CScrollBar", "SetScrollRange", "SetScrollPos",
+                     "进度条", "CProgressCtrl", "滑块控件", "CSliderCtrl", "ON_NOTIFY",
+                     "通用控件"],
+        "summary": "滚动条/进度条/滑块都围绕「范围 + 位置」工作; 交互要么走滚动通知, 要么走 WM_NOTIFY。",
+        "points": [
+            "滚动条: SetScrollRange(最小, 最大) + SetScrollPos(位置, TRUE 重绘); 拖动通知 WM_HSCROLL/WM_VSCROLL(→ OnHScroll/OnVScroll)。",
+            "进度条 CProgressCtrl: SetRange32 + SetPos; 常用 SetTimer/OnTimer 定时推进。",
+            "滑块 CSliderCtrl: SetRange + SetPos + SetPageSize; 变化通知走 WM_NOTIFY。",
+            "通用控件(进度条/滑块/日期选择等)的通知消息是 WM_NOTIFY → 用 ON_NOTIFY(通知码, ID, 处理函数) 映射。",
+        ],
+        "pitfalls": [
+            "SetScrollPos 的第二个参数忘了 TRUE → 代码里的位置对了, 屏幕上不动;",
+            "SetPos 超过 SetRange 的上限 → 进度条停在满格(不会再涨);",
+            "把 WM_NOTIFY 当成 WM_COMMAND 处理 → 通用控件的通知收不到。",
+        ],
+        "example": (
+            "#include <afxwin.h>\n"
+            "// 类里: CProgressCtrl m_progress; ON_WM_TIMER()\n"
+            "void CMainWnd::OnCreate(LPCREATESTRUCT lpcs)\n"
+            "{\n"
+            "    CFrameWnd::OnCreate(lpcs);\n"
+            "    m_progress.Create(WS_CHILD | WS_VISIBLE, CRect(20, 20, 320, 45),\n"
+            "                      this, IDC_PROGRESS);\n"
+            "    m_progress.SetRange32(0, 100);\n"
+            "    SetTimer(1, 100, NULL);                    // 每 100ms 推进一格\n"
+            "}\n"
+            "void CMainWnd::OnTimer(UINT_PTR nIDEvent)\n"
+            "{\n"
+            "    if (nIDEvent == 1) {\n"
+            "        int pos = m_progress.GetPos() + 5;\n"
+            "        m_progress.SetPos(pos % 105);          // 循环推进\n"
+            "    }\n"
+            "    CFrameWnd::OnTimer(nIDEvent);\n"
+            "}"
+        ),
+        "check": "范围与位置都设置了吗? 通知走的是滚动消息还是 WM_NOTIFY?",
+    },
 ]
 
 SKILL_BY_ID: Dict[str, Dict[str, Any]] = {s["id"]: s for s in SKILLS}
