@@ -64,41 +64,47 @@ PROBLEMS: List[Dict[str, Any]] = [
             "operator+ / operator== / size 是不是都加了 const?",
             "析构函数用的是 delete[] 还是 delete?",
         ],
-        skeleton="""#include <iostream>
-#include <string>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+//   <string>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 在这里定义 MyString 类 ==================
 //
 // 要求:
-//   * 成员只能用 char* 保存内容(禁止把 std::string 当成员)
-//   * MyString(const std::string& s)          构造
+//   * 成员只能用 char* 保存内容(禁止把 string 当成员)
+//   * MyString(const string& s)          构造
 //   * ~MyString()                             delete[]
 //   * MyString(const MyString&)               深拷贝
 //   * MyString& operator=(const MyString&)    要处理自赋值 a = a
 //   * MyString operator+(const MyString&) const
 //   * bool operator==(const MyString&) const
 //   * int size() const
-//   * friend std::ostream& operator<<(std::ostream&, const MyString&)
+//   * friend ostream& operator<<(ostream&, const MyString&)
 
 
 // ================== 以下 main 不要修改 ==================
 int main() {
-    std::string s1, s2;
-    if (!(std::cin >> s1 >> s2)) return 0;
+    string s1, s2;
+    if (!(cin >> s1 >> s2)) return 0;
     MyString a(s1), b(s2);
     MyString c = a;      // 拷贝构造
     c = b;               // 拷贝赋值
     a = a;               // 自赋值, 不能把自己弄坏
-    std::cout << a << " " << b << " " << c << std::endl;
+    cout << a << " " << b << " " << c << endl;
     MyString d = a + b;
-    std::cout << d << " len=" << d.size() << std::endl;
-    std::cout << (a == b) << " " << (b == c) << std::endl;
+    cout << d << " len=" << d.size() << endl;
+    cout << (a == b) << " " << (b == c) << endl;
     return 0;
 }
 """,
         solution="""#include <iostream>
 #include <string>
 #include <cstring>
+using namespace std;
 
 class MyString {
 private:
@@ -106,7 +112,7 @@ private:
     int size_;
 
 public:
-    explicit MyString(const std::string& s = "") : data_(nullptr), size_(static_cast<int>(s.size())) {
+    explicit MyString(const string& s = "") : data_(nullptr), size_(static_cast<int>(s.size())) {
         data_ = new char[size_ + 1];
         for (int i = 0; i < size_; ++i) data_[i] = s[i];
         data_[size_] = '\\0';
@@ -132,7 +138,7 @@ public:
     }
 
     MyString operator+(const MyString& other) const {
-        std::string joined(data_, size_);
+        string joined(data_, size_);
         joined.append(other.data_, other.size_);
         return MyString(joined);
     }
@@ -143,23 +149,23 @@ public:
 
     int size() const { return size_; }
 
-    friend std::ostream& operator<<(std::ostream& os, const MyString& s) {
+    friend ostream& operator<<(ostream& os, const MyString& s) {
         os << s.data_;
         return os;
     }
 };
 
 int main() {
-    std::string s1, s2;
-    if (!(std::cin >> s1 >> s2)) return 0;
+    string s1, s2;
+    if (!(cin >> s1 >> s2)) return 0;
     MyString a(s1), b(s2);
     MyString c = a;      // 拷贝构造
     c = b;               // 拷贝赋值
     a = a;               // 自赋值, 不能把自己弄坏
-    std::cout << a << " " << b << " " << c << std::endl;
+    cout << a << " " << b << " " << c << endl;
     MyString d = a + b;
-    std::cout << d << " len=" << d.size() << std::endl;
-    std::cout << (a == b) << " " << (b == c) << std::endl;
+    cout << d << " len=" << d.size() << endl;
+    cout << (a == b) << " " << (b == c) << endl;
     return 0;
 }
 """,
@@ -204,37 +210,42 @@ int main() {
             "派生时是 public 继承还是默认的 private 继承?（本题必须是 public）",
             "两个 print() 是否都加了 const ?",
         ],
-        skeleton="""#include <iostream>
-#include <string>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+//   <string>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 在这里定义 Employee 基类 与 Manager 派生类 ==================
 //
 // Employee:
-//   protected: std::string name; int salary;
-//   Employee(const std::string& n, int s)
+//   protected: string name; int salary;
+//   Employee(const string& n, int s)
 //   void print() const                  ->  name salary
 // Manager : public Employee
 //   private: int bonus;
-//   Manager(const std::string& n, int s, int b)   初始化列表里调用 Employee(n, s)
+//   Manager(const string& n, int s, int b)   初始化列表里调用 Employee(n, s)
 //   void print() const                  ->  name salary bonus (salary + bonus)
 
 
 // ================== 以下 main 不要修改 ==================
 int main() {
     int t;
-    if (!(std::cin >> t)) return 0;
+    if (!(cin >> t)) return 0;
     while (t--) {
         char kind;
-        std::cin >> kind;
-        std::string name;
+        cin >> kind;
+        string name;
         int salary;
-        std::cin >> name >> salary;
+        cin >> name >> salary;
         if (kind == 'E') {
             Employee e(name, salary);
             e.print();
         } else {
             int bonus;
-            std::cin >> bonus;
+            cin >> bonus;
             Manager m(name, salary, bonus);
             m.print();
         }
@@ -244,17 +255,18 @@ int main() {
 """,
         solution="""#include <iostream>
 #include <string>
+using namespace std;
 
 class Employee {
 protected:
-    std::string name;
+    string name;
     int salary;
 
 public:
-    Employee(const std::string& n, int s) : name(n), salary(s) {}
+    Employee(const string& n, int s) : name(n), salary(s) {}
 
     void print() const {
-        std::cout << name << ' ' << salary << '\\n';
+        cout << name << ' ' << salary << '\\n';
     }
 };
 
@@ -263,29 +275,29 @@ private:
     int bonus;
 
 public:
-    Manager(const std::string& n, int s, int b) : Employee(n, s), bonus(b) {}
+    Manager(const string& n, int s, int b) : Employee(n, s), bonus(b) {}
 
     void print() const {
-        std::cout << name << ' ' << salary << ' ' << bonus
+        cout << name << ' ' << salary << ' ' << bonus
                   << ' ' << (salary + bonus) << '\\n';
     }
 };
 
 int main() {
     int t;
-    if (!(std::cin >> t)) return 0;
+    if (!(cin >> t)) return 0;
     while (t--) {
         char kind;
-        std::cin >> kind;
-        std::string name;
+        cin >> kind;
+        string name;
         int salary;
-        std::cin >> name >> salary;
+        cin >> name >> salary;
         if (kind == 'E') {
             Employee e(name, salary);
             e.print();
         } else {
             int bonus;
-            std::cin >> bonus;
+            cin >> bonus;
             Manager m(name, salary, bonus);
             m.print();
         }
@@ -333,7 +345,12 @@ int main() {
             "Base 的析构函数加 virtual 了吗?",
             "有没有误用 private 继承导致外部无法构造 (Middle/Derived 必须是 public 继承)?",
         ],
-        skeleton="""#include <iostream>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 在这里定义 Base / Middle / Derived ==================
 //
@@ -345,33 +362,34 @@ int main() {
 // ================== 以下 main 不要修改 ==================
 int main() {
     Derived d;
-    std::cout << "---" << std::endl;
+    cout << "---" << endl;
     return 0;
 }
 """,
         solution="""#include <iostream>
+using namespace std;
 
 class Base {
 public:
-    Base() { std::cout << "Base ctor" << '\\n'; }
-    virtual ~Base() { std::cout << "Base dtor" << '\\n'; }
+    Base() { cout << "Base ctor" << '\\n'; }
+    virtual ~Base() { cout << "Base dtor" << '\\n'; }
 };
 
 class Middle : public Base {
 public:
-    Middle() { std::cout << "Middle ctor" << '\\n'; }
-    ~Middle() { std::cout << "Middle dtor" << '\\n'; }
+    Middle() { cout << "Middle ctor" << '\\n'; }
+    ~Middle() { cout << "Middle dtor" << '\\n'; }
 };
 
 class Derived : public Middle {
 public:
-    Derived() { std::cout << "Derived ctor" << '\\n'; }
-    ~Derived() { std::cout << "Derived dtor" << '\\n'; }
+    Derived() { cout << "Derived ctor" << '\\n'; }
+    ~Derived() { cout << "Derived dtor" << '\\n'; }
 };
 
 int main() {
     Derived d;
-    std::cout << "---" << std::endl;
+    cout << "---" << endl;
     return 0;
 }
 """,
@@ -414,15 +432,20 @@ int main() {
             "Shape 的析构是 virtual 吗?(main 里 delete 的是 Shape*)",
             "print() 里调用的是虚函数吗?",
         ],
-        skeleton="""#include <iostream>
-#include <iomanip>
-#include <string>
-#include <vector>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+//   <iomanip>
+//   <string>
+//   <vector>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 在这里定义 Shape / Circle / Rectangle ==================
 //
 // Shape:
-//   virtual std::string name() const
+//   virtual string name() const
 //   virtual double area() const
 //   void print() const      ->  name() << ' ' << area() << '\\n'
 //   virtual ~Shape()
@@ -432,30 +455,30 @@ int main() {
 
 // ================== 以下 main 不要修改 ==================
 int main() {
-    std::cout << std::fixed << std::setprecision(2);
+    cout << fixed << setprecision(2);
     int t;
-    if (!(std::cin >> t)) return 0;
-    std::vector<Shape*> shapes;
+    if (!(cin >> t)) return 0;
+    vector<Shape*> shapes;
     while (t--) {
         char kind;
-        std::cin >> kind;
+        cin >> kind;
         if (kind == 'C') {
             double r;
-            std::cin >> r;
+            cin >> r;
             shapes.push_back(new Circle(r));
         } else {
             double w, h;
-            std::cin >> w >> h;
+            cin >> w >> h;
             shapes.push_back(new Rectangle(w, h));
         }
     }
     double total = 0.0;
-    for (std::size_t i = 0; i < shapes.size(); ++i) {
+    for (size_t i = 0; i < shapes.size(); ++i) {
         shapes[i]->print();
         total += shapes[i]->area();
     }
-    std::cout << "total=" << total << std::endl;
-    for (std::size_t i = 0; i < shapes.size(); ++i) delete shapes[i];
+    cout << "total=" << total << endl;
+    for (size_t i = 0; i < shapes.size(); ++i) delete shapes[i];
     return 0;
 }
 """,
@@ -463,14 +486,15 @@ int main() {
 #include <iomanip>
 #include <string>
 #include <vector>
+using namespace std;
 
 class Shape {
 public:
-    virtual std::string name() const { return "Shape"; }
+    virtual string name() const { return "Shape"; }
     virtual double area() const { return 0.0; }
 
     void print() const {
-        std::cout << name() << ' ' << area() << '\\n';
+        cout << name() << ' ' << area() << '\\n';
     }
 
     virtual ~Shape() {}
@@ -483,7 +507,7 @@ private:
 public:
     explicit Circle(double r) : r_(r) {}
 
-    std::string name() const { return "Circle"; }
+    string name() const { return "Circle"; }
     double area() const { return 3.141592653589793 * r_ * r_; }
 };
 
@@ -495,35 +519,35 @@ private:
 public:
     Rectangle(double w, double h) : w_(w), h_(h) {}
 
-    std::string name() const { return "Rectangle"; }
+    string name() const { return "Rectangle"; }
     double area() const { return w_ * h_; }
 };
 
 int main() {
-    std::cout << std::fixed << std::setprecision(2);
+    cout << fixed << setprecision(2);
     int t;
-    if (!(std::cin >> t)) return 0;
-    std::vector<Shape*> shapes;
+    if (!(cin >> t)) return 0;
+    vector<Shape*> shapes;
     while (t--) {
         char kind;
-        std::cin >> kind;
+        cin >> kind;
         if (kind == 'C') {
             double r;
-            std::cin >> r;
+            cin >> r;
             shapes.push_back(new Circle(r));
         } else {
             double w, h;
-            std::cin >> w >> h;
+            cin >> w >> h;
             shapes.push_back(new Rectangle(w, h));
         }
     }
     double total = 0.0;
-    for (std::size_t i = 0; i < shapes.size(); ++i) {
+    for (size_t i = 0; i < shapes.size(); ++i) {
         shapes[i]->print();
         total += shapes[i]->area();
     }
-    std::cout << "total=" << total << std::endl;
-    for (std::size_t i = 0; i < shapes.size(); ++i) delete shapes[i];
+    cout << "total=" << total << endl;
+    for (size_t i = 0; i < shapes.size(); ++i) delete shapes[i];
     return 0;
 }
 """,
@@ -569,16 +593,21 @@ int main() {
             "~Shape 是不是 virtual ?",
             "派生类的 name()/area() 是否用了 override 或至少签名完全一致?",
         ],
-        skeleton="""#include <iostream>
-#include <iomanip>
-#include <string>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+//   <iomanip>
+//   <string>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 在这里定义抽象基类 Shape 与 Circle / Rectangle ==================
 //
 // Shape:
-//   virtual std::string name() const = 0;     纯虚
+//   virtual string name() const = 0;     纯虚
 //   virtual double area() const = 0;          纯虚
-//   virtual ~Shape() { std::cout << "~Shape" << std::endl; }
+//   virtual ~Shape() { cout << "~Shape" << endl; }
 // Circle    : public Shape   Circle(double r)     析构输出 "~Circle"
 // Rectangle : public Shape   Rectangle(double w, double h)  析构输出 "~Rectangle"
 // 圆周率用 3.141592653589793
@@ -586,11 +615,11 @@ int main() {
 
 // ================== 以下 main 不要修改 ==================
 int main() {
-    std::cout << std::fixed << std::setprecision(2);
+    cout << fixed << setprecision(2);
     Shape* a = new Circle(1);
     Shape* b = new Rectangle(2, 3);
-    std::cout << a->name() << " " << a->area() << std::endl;
-    std::cout << b->name() << " " << b->area() << std::endl;
+    cout << a->name() << " " << a->area() << endl;
+    cout << b->name() << " " << b->area() << endl;
     delete a;
     delete b;
     return 0;
@@ -599,13 +628,14 @@ int main() {
         solution="""#include <iostream>
 #include <iomanip>
 #include <string>
+using namespace std;
 
 class Shape {
 public:
-    virtual std::string name() const = 0;
+    virtual string name() const = 0;
     virtual double area() const = 0;
 
-    virtual ~Shape() { std::cout << "~Shape" << std::endl; }
+    virtual ~Shape() { cout << "~Shape" << endl; }
 };
 
 class Circle : public Shape {
@@ -614,9 +644,9 @@ private:
 
 public:
     explicit Circle(double r) : r_(r) {}
-    ~Circle() { std::cout << "~Circle" << std::endl; }
+    ~Circle() { cout << "~Circle" << endl; }
 
-    std::string name() const { return "Circle"; }
+    string name() const { return "Circle"; }
     double area() const { return 3.141592653589793 * r_ * r_; }
 };
 
@@ -627,18 +657,18 @@ private:
 
 public:
     Rectangle(double w, double h) : w_(w), h_(h) {}
-    ~Rectangle() { std::cout << "~Rectangle" << std::endl; }
+    ~Rectangle() { cout << "~Rectangle" << endl; }
 
-    std::string name() const { return "Rectangle"; }
+    string name() const { return "Rectangle"; }
     double area() const { return w_ * h_; }
 };
 
 int main() {
-    std::cout << std::fixed << std::setprecision(2);
+    cout << fixed << setprecision(2);
     Shape* a = new Circle(1);
     Shape* b = new Rectangle(2, 3);
-    std::cout << a->name() << " " << a->area() << std::endl;
-    std::cout << b->name() << " " << b->area() << std::endl;
+    cout << a->name() << " " << a->area() << endl;
+    cout << b->name() << " " << b->area() << endl;
     delete a;
     delete b;
     return 0;
@@ -680,15 +710,20 @@ int main() {
             "operator<< 返回的是 std::ostream& 吗?",
             "Calculator::trace 是不是 static 的?",
         ],
-        skeleton="""#include <iostream>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 在这里定义 Matrix 与 Calculator ==================
 //
 // Matrix:
 //   int m[2][2];                     私有
 //   Matrix();                        全部置 0
-//   friend std::istream& operator>>(std::istream&, Matrix&);
-//   friend std::ostream& operator<<(std::ostream&, const Matrix&);
+//   friend istream& operator>>(istream&, Matrix&);
+//   friend ostream& operator<<(ostream&, const Matrix&);
 //   friend Matrix operator*(const Matrix&, const Matrix&);
 //   friend class Calculator;
 // Calculator:
@@ -698,14 +733,15 @@ int main() {
 // ================== 以下 main 不要修改 ==================
 int main() {
     Matrix a, b;
-    if (!(std::cin >> a >> b)) return 0;
+    if (!(cin >> a >> b)) return 0;
     Matrix c = a * b;
-    std::cout << c << std::endl;
-    std::cout << Calculator::trace(a) << std::endl;
+    cout << c << endl;
+    cout << Calculator::trace(a) << endl;
     return 0;
 }
 """,
         solution="""#include <iostream>
+using namespace std;
 
 class Matrix {
 private:
@@ -717,13 +753,13 @@ public:
             for (int j = 0; j < 2; ++j) m[i][j] = 0;
     }
 
-    friend std::istream& operator>>(std::istream& is, Matrix& mat) {
+    friend istream& operator>>(istream& is, Matrix& mat) {
         for (int i = 0; i < 2; ++i)
             for (int j = 0; j < 2; ++j) is >> mat.m[i][j];
         return is;
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const Matrix& mat) {
+    friend ostream& operator<<(ostream& os, const Matrix& mat) {
         for (int i = 0; i < 2; ++i)
             for (int j = 0; j < 2; ++j) os << mat.m[i][j] << ' ';
         return os;
@@ -751,10 +787,10 @@ public:
 
 int main() {
     Matrix a, b;
-    if (!(std::cin >> a >> b)) return 0;
+    if (!(cin >> a >> b)) return 0;
     Matrix c = a * b;
-    std::cout << c << std::endl;
-    std::cout << Calculator::trace(a) << std::endl;
+    cout << c << endl;
+    cout << Calculator::trace(a) << endl;
     return 0;
 }
 """,
@@ -795,7 +831,12 @@ int main() {
             "四个算术运算符里有没有复用构造函数来顺便约分?",
             "哪些运算符必须加 const ?",
         ],
-        skeleton="""#include <iostream>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 在这里定义 Fraction 类 ==================
 //
@@ -809,18 +850,19 @@ int main() {
 // ================== 以下 main 不要修改 ==================
 int main() {
     int a, b, c, d;
-    if (!(std::cin >> a >> b >> c >> d)) return 0;
+    if (!(cin >> a >> b >> c >> d)) return 0;
     Fraction x(a, b), y(c, d);
-    std::cout << x << " " << y << std::endl;
-    std::cout << (x + y) << std::endl;
-    std::cout << (x - y) << std::endl;
-    std::cout << (x * y) << std::endl;
-    std::cout << (x / y) << std::endl;
-    std::cout << (x < y) << " " << (x == y) << std::endl;
+    cout << x << " " << y << endl;
+    cout << (x + y) << endl;
+    cout << (x - y) << endl;
+    cout << (x * y) << endl;
+    cout << (x / y) << endl;
+    cout << (x < y) << " " << (x == y) << endl;
     return 0;
 }
 """,
         solution="""#include <iostream>
+using namespace std;
 
 class Fraction {
 private:
@@ -877,7 +919,7 @@ public:
         return num_ == o.num_ && den_ == o.den_;
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const Fraction& f) {
+    friend ostream& operator<<(ostream& os, const Fraction& f) {
         os << f.num_ << '/' << f.den_;
         return os;
     }
@@ -885,14 +927,14 @@ public:
 
 int main() {
     int a, b, c, d;
-    if (!(std::cin >> a >> b >> c >> d)) return 0;
+    if (!(cin >> a >> b >> c >> d)) return 0;
     Fraction x(a, b), y(c, d);
-    std::cout << x << " " << y << std::endl;
-    std::cout << (x + y) << std::endl;
-    std::cout << (x - y) << std::endl;
-    std::cout << (x * y) << std::endl;
-    std::cout << (x / y) << std::endl;
-    std::cout << (x < y) << " " << (x == y) << std::endl;
+    cout << x << " " << y << endl;
+    cout << (x + y) << endl;
+    cout << (x - y) << endl;
+    cout << (x * y) << endl;
+    cout << (x / y) << endl;
+    cout << (x < y) << " " << (x == y) << endl;
     return 0;
 }
 """,
@@ -961,26 +1003,31 @@ int main() {
             "mostExpensive() 返回的是 const Item& 而不是 Item 吗?",
             "total() / print() / mostExpensive() / name() / subtotal() 都加了 const 吗?",
         ],
-        skeleton="""#include <iostream>
-#include <string>
-#include <vector>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+//   <string>
+//   <vector>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 在这里定义 Item / Discount / Order ==================
 //
 // Item       商品: private name_ / unitPrice_ / qty_
-//                  Item(const std::string&, int, int)
+//                  Item(const string&, int, int)
 //                  int subtotal() const            -> 单价 × 数量
-//                  const std::string& name() const
+//                  const string& name() const
 //
 // Discount   折扣规则: private threshold_ / amount_
 //                  Discount(int threshold, int amount)          <- 没有默认构造!
 //                  int apply(int total) const      -> total >= threshold ? max(0, total-amount) : total
 //
 // Order      订单: 组合(has-a), 不是继承!
-//                  private std::string owner_;
-//                  private std::vector<Item> items_;            <- 组合
+//                  private string owner_;
+//                  private vector<Item> items_;            <- 组合
 //                  private Discount discount_;                  <- 组合(成员对象)
-//                  Order(const std::string& owner, int threshold, int amount)
+//                  Order(const string& owner, int threshold, int amount)
 //                        初始化列表里必须构造 discount_
 //                  void add(const Item& item)
 //                  int total() const
@@ -990,14 +1037,14 @@ int main() {
 
 // ================== 以下 main 不要修改 ==================
 int main() {
-    std::string owner;
+    string owner;
     int n, threshold, amount;
-    if (!(std::cin >> owner >> n >> threshold >> amount)) return 0;
+    if (!(cin >> owner >> n >> threshold >> amount)) return 0;
     Order order(owner, threshold, amount);
     for (int i = 0; i < n; ++i) {
-        std::string name;
+        string name;
         int price, qty;
-        std::cin >> name >> price >> qty;
+        cin >> name >> price >> qty;
         order.add(Item(name, price, qty));
     }
     order.print();
@@ -1007,19 +1054,20 @@ int main() {
         solution="""#include <iostream>
 #include <string>
 #include <vector>
+using namespace std;
 
 class Item {
 private:
-    std::string name_;
+    string name_;
     int unitPrice_;
     int qty_;
 
 public:
-    Item(const std::string& name, int unitPrice, int qty)
+    Item(const string& name, int unitPrice, int qty)
         : name_(name), unitPrice_(unitPrice), qty_(qty) {}
 
     int subtotal() const { return unitPrice_ * qty_; }
-    const std::string& name() const { return name_; }
+    const string& name() const { return name_; }
 };
 
 class Discount {
@@ -1039,53 +1087,53 @@ public:
 
 class Order {
 private:
-    std::string owner_;
-    std::vector<Item> items_;      // 组合: 订单“有”若干商品
+    string owner_;
+    vector<Item> items_;      // 组合: 订单“有”若干商品
     Discount discount_;            // 组合: 订单“有”一条折扣规则(成员对象)
 
 public:
-    Order(const std::string& owner, int threshold, int amount)
+    Order(const string& owner, int threshold, int amount)
         : owner_(owner), discount_(threshold, amount) {}   // 成员对象只能在初始化列表里构造
 
     void add(const Item& item) { items_.push_back(item); }
 
     int total() const {
         int sum = 0;
-        for (std::size_t i = 0; i < items_.size(); ++i) sum += items_[i].subtotal();
+        for (size_t i = 0; i < items_.size(); ++i) sum += items_[i].subtotal();
         return sum;
     }
 
     const Item& mostExpensive() const {
-        std::size_t best = 0;
-        for (std::size_t i = 1; i < items_.size(); ++i) {
+        size_t best = 0;
+        for (size_t i = 1; i < items_.size(); ++i) {
             if (items_[i].subtotal() > items_[best].subtotal()) best = i;
         }
         return items_[best];
     }
 
     void print() const {
-        std::cout << owner_ << " n=" << items_.size() << '\\n';
-        for (std::size_t i = 0; i < items_.size(); ++i) {
-            std::cout << items_[i].name() << ' ' << items_[i].subtotal() << '\\n';
+        cout << owner_ << " n=" << items_.size() << '\\n';
+        for (size_t i = 0; i < items_.size(); ++i) {
+            cout << items_[i].name() << ' ' << items_[i].subtotal() << '\\n';
         }
         int raw = total();
         int payable = discount_.apply(raw);
-        std::cout << "subtotal=" << raw << '\\n';
-        std::cout << "discount=" << payable << '\\n';
-        std::cout << "saved=" << (raw - payable) << '\\n';
-        std::cout << "top=" << mostExpensive().name() << '\\n';
+        cout << "subtotal=" << raw << '\\n';
+        cout << "discount=" << payable << '\\n';
+        cout << "saved=" << (raw - payable) << '\\n';
+        cout << "top=" << mostExpensive().name() << '\\n';
     }
 };
 
 int main() {
-    std::string owner;
+    string owner;
     int n, threshold, amount;
-    if (!(std::cin >> owner >> n >> threshold >> amount)) return 0;
+    if (!(cin >> owner >> n >> threshold >> amount)) return 0;
     Order order(owner, threshold, amount);
     for (int i = 0; i < n; ++i) {
-        std::string name;
+        string name;
         int price, qty;
-        std::cin >> name >> price >> qty;
+        cin >> name >> price >> qty;
         order.add(Item(name, price, qty));
     }
     order.print();

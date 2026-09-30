@@ -65,8 +65,13 @@ PROBLEMS: List[Dict[str, Any]] = [
             "析构里是 delete[] 吗?",
             "push_back 在 size_ == cap_ 时有没有扩容?",
         ],
-        skeleton="""#include <iostream>
-#include <string>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+//   <string>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 在这里定义类模板 MyVector<T> ==================
 //
@@ -81,38 +86,39 @@ PROBLEMS: List[Dict[str, Any]] = [
 // ================== 以下 main 不要修改 ==================
 int main() {
     int n;
-    if (!(std::cin >> n)) return 0;
+    if (!(cin >> n)) return 0;
 
     MyVector<int> vi;
     for (int i = 0; i < n; ++i) {
         int x;
-        std::cin >> x;
+        cin >> x;
         vi.push_back(x);
     }
 
-    MyVector<std::string> vs;
+    MyVector<string> vs;
     for (int i = 0; i < n; ++i) {
-        std::string s;
-        std::cin >> s;
+        string s;
+        cin >> s;
         vs.push_back(s);
     }
 
     long long sum = 0;
     for (int i = 0; i < vi.size(); ++i) sum += vi[i];
-    std::cout << "n=" << vi.size() << " sum=" << sum << std::endl;
+    cout << "n=" << vi.size() << " sum=" << sum << endl;
 
     for (int i = 0; i < vs.size(); ++i) {
-        std::cout << vs[i] << (i + 1 == vs.size() ? '\\n' : ' ');
+        cout << vs[i] << (i + 1 == vs.size() ? '\\n' : ' ');
     }
 
     MyVector<int> cp = vi;      // 模板的深拷贝
     cp[0] = -1;
-    std::cout << vi[0] << " " << cp[0] << std::endl;
+    cout << vi[0] << " " << cp[0] << endl;
     return 0;
 }
 """,
         solution="""#include <iostream>
 #include <string>
+using namespace std;
 
 template <class T>
 class MyVector {
@@ -159,33 +165,33 @@ public:
 
 int main() {
     int n;
-    if (!(std::cin >> n)) return 0;
+    if (!(cin >> n)) return 0;
 
     MyVector<int> vi;
     for (int i = 0; i < n; ++i) {
         int x;
-        std::cin >> x;
+        cin >> x;
         vi.push_back(x);
     }
 
-    MyVector<std::string> vs;
+    MyVector<string> vs;
     for (int i = 0; i < n; ++i) {
-        std::string s;
-        std::cin >> s;
+        string s;
+        cin >> s;
         vs.push_back(s);
     }
 
     long long sum = 0;
     for (int i = 0; i < vi.size(); ++i) sum += vi[i];
-    std::cout << "n=" << vi.size() << " sum=" << sum << std::endl;
+    cout << "n=" << vi.size() << " sum=" << sum << endl;
 
     for (int i = 0; i < vs.size(); ++i) {
-        std::cout << vs[i] << (i + 1 == vs.size() ? '\\n' : ' ');
+        cout << vs[i] << (i + 1 == vs.size() ? '\\n' : ' ');
     }
 
     MyVector<int> cp = vi;      // 模板的深拷贝
     cp[0] = -1;
-    std::cout << vi[0] << " " << cp[0] << std::endl;
+    cout << vi[0] << " " << cp[0] << endl;
     return 0;
 }
 """,
@@ -224,10 +230,15 @@ int main() {
             "format 是不是 static 的(题目是按 Formatter<T>::format(...) 调用的)?",
             "主模板能不能通用于 std::string ?",
         ],
-        skeleton="""#include <iostream>
-#include <sstream>
-#include <iomanip>
-#include <string>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+//   <sstream>
+//   <iomanip>
+//   <string>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 定义类模板 Formatter<T> 及两个全特化 ==================
 //
@@ -240,11 +251,11 @@ int main() {
 
 // ================== 以下 main 不要修改 ==================
 int main() {
-    std::cout << Formatter<int>::format(42) << std::endl;
-    std::cout << Formatter<double>::format(3.14159) << std::endl;
-    std::cout << Formatter<bool>::format(true) << std::endl;
-    std::cout << Formatter<bool>::format(false) << std::endl;
-    std::cout << Formatter<std::string>::format("hi") << std::endl;
+    cout << Formatter<int>::format(42) << endl;
+    cout << Formatter<double>::format(3.14159) << endl;
+    cout << Formatter<bool>::format(true) << endl;
+    cout << Formatter<bool>::format(false) << endl;
+    cout << Formatter<string>::format("hi") << endl;
     return 0;
 }
 """,
@@ -252,11 +263,12 @@ int main() {
 #include <sstream>
 #include <iomanip>
 #include <string>
+using namespace std;
 
 template <class T>
 struct Formatter {
-    static std::string format(const T& value) {
-        std::ostringstream os;
+    static string format(const T& value) {
+        ostringstream os;
         os << value;
         return os.str();
     }
@@ -264,26 +276,26 @@ struct Formatter {
 
 template <>
 struct Formatter<bool> {
-    static std::string format(const bool& value) {
+    static string format(const bool& value) {
         return value ? "true" : "false";
     }
 };
 
 template <>
 struct Formatter<double> {
-    static std::string format(const double& value) {
-        std::ostringstream os;
-        os << std::fixed << std::setprecision(2) << value;
+    static string format(const double& value) {
+        ostringstream os;
+        os << fixed << setprecision(2) << value;
         return os.str();
     }
 };
 
 int main() {
-    std::cout << Formatter<int>::format(42) << std::endl;
-    std::cout << Formatter<double>::format(3.14159) << std::endl;
-    std::cout << Formatter<bool>::format(true) << std::endl;
-    std::cout << Formatter<bool>::format(false) << std::endl;
-    std::cout << Formatter<std::string>::format("hi") << std::endl;
+    cout << Formatter<int>::format(42) << endl;
+    cout << Formatter<double>::format(3.14159) << endl;
+    cout << Formatter<bool>::format(true) << endl;
+    cout << Formatter<bool>::format(false) << endl;
+    cout << Formatter<string>::format("hi") << endl;
     return 0;
 }
 """,
@@ -326,19 +338,23 @@ int main() {
             "析构函数有没有漏掉 nullptr 判断?（delete nullptr 其实是安全的）",
             "reset 之后旧资源确实被释放了吗?",
         ],
-        skeleton="""#include <iostream>
-#include <string>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+//   <string>
+// 下面这行 using namespace std; 已帮你写好
 
+using namespace std;
 struct Resource {
-    std::string name;
-    explicit Resource(const std::string& n) : name(n) {
-        std::cout << "acquire " << name << std::endl;
+    string name;
+    explicit Resource(const string& n) : name(n) {
+        cout << "acquire " << name << endl;
     }
     ~Resource() {
-        std::cout << "release " << name << std::endl;
+        cout << "release " << name << endl;
     }
     void use() const {
-        std::cout << "use " << name << std::endl;
+        cout << "use " << name << endl;
     }
 };
 
@@ -363,25 +379,26 @@ int main() {
 
         ScopedPtr<Resource> q(new Resource("B"));
         q.reset(new Resource("C"));
-        std::cout << "valid=" << (q.get() != nullptr) << std::endl;
+        cout << "valid=" << (q.get() != nullptr) << endl;
     }
-    std::cout << "done" << std::endl;
+    cout << "done" << endl;
     return 0;
 }
 """,
         solution="""#include <iostream>
 #include <string>
+using namespace std;
 
 struct Resource {
-    std::string name;
-    explicit Resource(const std::string& n) : name(n) {
-        std::cout << "acquire " << name << std::endl;
+    string name;
+    explicit Resource(const string& n) : name(n) {
+        cout << "acquire " << name << endl;
     }
     ~Resource() {
-        std::cout << "release " << name << std::endl;
+        cout << "release " << name << endl;
     }
     void use() const {
-        std::cout << "use " << name << std::endl;
+        cout << "use " << name << endl;
     }
 };
 
@@ -419,9 +436,9 @@ int main() {
 
         ScopedPtr<Resource> q(new Resource("B"));
         q.reset(new Resource("C"));
-        std::cout << "valid=" << (q.get() != nullptr) << std::endl;
+        cout << "valid=" << (q.get() != nullptr) << endl;
     }
-    std::cout << "done" << std::endl;
+    cout << "done" << endl;
     return 0;
 }
 """,
@@ -461,13 +478,18 @@ int main() {
             "instance() 返回的是 Logger& 吗?",
             "序号是在 log() 里自增, 而不是在构造函数里?",
         ],
-        skeleton="""#include <iostream>
-#include <string>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+//   <string>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 在这里定义单例类 Logger ==================
 //
 //   * static Logger& instance();            返回唯一实例
-//   * void log(const std::string& msg);     输出 "[序号] 消息", 序号从 1 递增
+//   * void log(const string& msg);     输出 "[序号] 消息", 序号从 1 递增
 //   * int count() const;                    已记录条数
 //   * 构造函数 private, 拷贝构造与拷贝赋值 = delete
 
@@ -475,21 +497,22 @@ int main() {
 // ================== 以下 main 不要修改 ==================
 int main() {
     int n;
-    if (!(std::cin >> n)) return 0;
+    if (!(cin >> n)) return 0;
     for (int i = 0; i < n; ++i) {
-        std::string s;
-        std::cin >> s;
+        string s;
+        cin >> s;
         Logger::instance().log(s);
     }
-    std::cout << "count=" << Logger::instance().count() << std::endl;
+    cout << "count=" << Logger::instance().count() << endl;
     Logger& a = Logger::instance();
     Logger& b = Logger::instance();
-    std::cout << (&a == &b) << std::endl;
+    cout << (&a == &b) << endl;
     return 0;
 }
 """,
         solution="""#include <iostream>
 #include <string>
+using namespace std;
 
 class Logger {
 private:
@@ -505,9 +528,9 @@ public:
         return only;
     }
 
-    void log(const std::string& msg) {
+    void log(const string& msg) {
         ++seq_;
-        std::cout << '[' << seq_ << "] " << msg << std::endl;
+        cout << '[' << seq_ << "] " << msg << endl;
     }
 
     int count() const { return seq_; }
@@ -515,16 +538,16 @@ public:
 
 int main() {
     int n;
-    if (!(std::cin >> n)) return 0;
+    if (!(cin >> n)) return 0;
     for (int i = 0; i < n; ++i) {
-        std::string s;
-        std::cin >> s;
+        string s;
+        cin >> s;
         Logger::instance().log(s);
     }
-    std::cout << "count=" << Logger::instance().count() << std::endl;
+    cout << "count=" << Logger::instance().count() << endl;
     Logger& a = Logger::instance();
     Logger& b = Logger::instance();
-    std::cout << (&a == &b) << std::endl;
+    cout << (&a == &b) << endl;
     return 0;
 }
 """,
@@ -567,42 +590,47 @@ int main() {
             "非法类型是不是返回了空指针而不是崩溃?",
             "工厂是不是 static 成员函数?",
         ],
-        skeleton="""#include <iostream>
-#include <iomanip>
-#include <memory>
-#include <string>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+//   <iomanip>
+//   <memory>
+//   <string>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 定义 Shape / Circle / Rectangle / ShapeFactory ==================
 //
-// Shape:   virtual std::string name() const = 0;
+// Shape:   virtual string name() const = 0;
 //          virtual double area() const = 0;
 //          virtual ~Shape() {}
 // Circle(double r)           area = 3.141592653589793 * r * r
 // Rectangle(double w, double h)   area = w * h
 //
-// ShapeFactory::create(char kind, double a, double b) -> std::unique_ptr<Shape>
+// ShapeFactory::create(char kind, double a, double b) -> unique_ptr<Shape>
 //          'C' -> Circle(a)      'R' -> Rectangle(a, b)     其他 -> 空指针
 
 
 // ================== 以下 main 不要修改 ==================
 int main() {
-    std::cout << std::fixed << std::setprecision(1);
+    cout << fixed << setprecision(1);
     int t;
-    if (!(std::cin >> t)) return 0;
+    if (!(cin >> t)) return 0;
     double total = 0.0;
     while (t--) {
         char kind;
         double a, b;
-        std::cin >> kind >> a >> b;
-        std::unique_ptr<Shape> s = ShapeFactory::create(kind, a, b);
+        cin >> kind >> a >> b;
+        unique_ptr<Shape> s = ShapeFactory::create(kind, a, b);
         if (!s) {
-            std::cout << "unknown" << std::endl;
+            cout << "unknown" << endl;
             continue;
         }
-        std::cout << s->name() << " " << s->area() << std::endl;
+        cout << s->name() << " " << s->area() << endl;
         total += s->area();
     }
-    std::cout << "total=" << total << std::endl;
+    cout << "total=" << total << endl;
     return 0;
 }
 """,
@@ -610,10 +638,11 @@ int main() {
 #include <iomanip>
 #include <memory>
 #include <string>
+using namespace std;
 
 class Shape {
 public:
-    virtual std::string name() const = 0;
+    virtual string name() const = 0;
     virtual double area() const = 0;
     virtual ~Shape() {}
 };
@@ -624,7 +653,7 @@ private:
 
 public:
     explicit Circle(double r) : r_(r) {}
-    std::string name() const { return "Circle"; }
+    string name() const { return "Circle"; }
     double area() const { return 3.141592653589793 * r_ * r_; }
 };
 
@@ -635,37 +664,37 @@ private:
 
 public:
     Rectangle(double w, double h) : w_(w), h_(h) {}
-    std::string name() const { return "Rectangle"; }
+    string name() const { return "Rectangle"; }
     double area() const { return w_ * h_; }
 };
 
 class ShapeFactory {
 public:
-    static std::unique_ptr<Shape> create(char kind, double a, double b) {
-        if (kind == 'C') return std::unique_ptr<Shape>(new Circle(a));
-        if (kind == 'R') return std::unique_ptr<Shape>(new Rectangle(a, b));
-        return std::unique_ptr<Shape>();
+    static unique_ptr<Shape> create(char kind, double a, double b) {
+        if (kind == 'C') return unique_ptr<Shape>(new Circle(a));
+        if (kind == 'R') return unique_ptr<Shape>(new Rectangle(a, b));
+        return unique_ptr<Shape>();
     }
 };
 
 int main() {
-    std::cout << std::fixed << std::setprecision(1);
+    cout << fixed << setprecision(1);
     int t;
-    if (!(std::cin >> t)) return 0;
+    if (!(cin >> t)) return 0;
     double total = 0.0;
     while (t--) {
         char kind;
         double a, b;
-        std::cin >> kind >> a >> b;
-        std::unique_ptr<Shape> s = ShapeFactory::create(kind, a, b);
+        cin >> kind >> a >> b;
+        unique_ptr<Shape> s = ShapeFactory::create(kind, a, b);
         if (!s) {
-            std::cout << "unknown" << std::endl;
+            cout << "unknown" << endl;
             continue;
         }
-        std::cout << s->name() << " " << s->area() << std::endl;
+        cout << s->name() << " " << s->area() << endl;
         total += s->area();
     }
-    std::cout << "total=" << total << std::endl;
+    cout << "total=" << total << endl;
     return 0;
 }
 """,
@@ -706,10 +735,15 @@ int main() {
             "detach 一个不存在的观察者会崩溃吗?",
             "notify 遍历时有没有可能因为 detach 而迭代器失效?（本题顺序执行, 不会）",
         ],
-        skeleton="""#include <iostream>
-#include <string>
-#include <vector>
-#include <algorithm>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+//   <string>
+//   <vector>
+//   <algorithm>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 定义 Observer / Subject / Screen ==================
 //
@@ -719,7 +753,7 @@ int main() {
 //     void notify(int value);         按加入顺序通知
 //     virtual ~Subject() {}
 // Screen : public Observer
-//     Screen(const std::string& id);  update 输出 "<id> got <value>"
+//     Screen(const string& id);  update 输出 "<id> got <value>"
 
 
 // ================== 以下 main 不要修改 ==================
@@ -739,6 +773,7 @@ int main() {
 #include <string>
 #include <vector>
 #include <algorithm>
+using namespace std;
 
 class Observer {
 public:
@@ -748,7 +783,7 @@ public:
 
 class Subject {
 private:
-    std::vector<Observer*> observers_;
+    vector<Observer*> observers_;
 
 public:
     void attach(Observer* o) {
@@ -756,13 +791,13 @@ public:
     }
 
     void detach(Observer* o) {
-        std::vector<Observer*>::iterator it =
+        vector<Observer*>::iterator it =
             std::find(observers_.begin(), observers_.end(), o);
         if (it != observers_.end()) observers_.erase(it);
     }
 
     void notify(int value) {
-        for (std::size_t i = 0; i < observers_.size(); ++i) {
+        for (size_t i = 0; i < observers_.size(); ++i) {
             observers_[i]->update(value);
         }
     }
@@ -772,13 +807,13 @@ public:
 
 class Screen : public Observer {
 private:
-    std::string id_;
+    string id_;
 
 public:
-    explicit Screen(const std::string& id) : id_(id) {}
+    explicit Screen(const string& id) : id_(id) {}
 
     void update(int value) {
-        std::cout << id_ << " got " << value << std::endl;
+        cout << id_ << " got " << value << endl;
     }
 };
 
@@ -830,8 +865,13 @@ int main() {
             "SmartPhone 的初始化列表里有没有直接写 Device(i) ?",
             "deviceId() / cameraMp() / screenInch() 都是 const 成员函数吗?",
         ],
-        skeleton="""#include <iostream>
-#include <string>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+//   <string>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 定义 Device / Camera / ScreenModule / SmartPhone ==================
 //
@@ -852,15 +892,16 @@ int main() {
 // ================== 以下 main 不要修改 ==================
 int main() {
     int id, mp, inch;
-    if (!(std::cin >> id >> mp >> inch)) return 0;
+    if (!(cin >> id >> mp >> inch)) return 0;
     SmartPhone sp(id, mp, inch);
-    std::cout << "id=" << sp.deviceId() << " mp=" << sp.cameraMp()
-              << " inch=" << sp.screenInch() << std::endl;
+    cout << "id=" << sp.deviceId() << " mp=" << sp.cameraMp()
+              << " inch=" << sp.screenInch() << endl;
     return 0;
 }
 """,
         solution="""#include <iostream>
 #include <string>
+using namespace std;
 
 class Device {
 protected:
@@ -868,7 +909,7 @@ protected:
 
 public:
     explicit Device(int i) : id(i) {
-        std::cout << "Device " << i << std::endl;
+        cout << "Device " << i << endl;
     }
 
     int deviceId() const { return id; }
@@ -880,7 +921,7 @@ protected:
 
 public:
     Camera(int i, int mp) : Device(i), mp_(mp) {
-        std::cout << "Camera " << mp << std::endl;
+        cout << "Camera " << mp << endl;
     }
 
     int cameraMp() const { return mp_; }
@@ -892,7 +933,7 @@ protected:
 
 public:
     ScreenModule(int i, int inch) : Device(i), inch_(inch) {
-        std::cout << "Screen " << inch << std::endl;
+        cout << "Screen " << inch << endl;
     }
 
     int screenInch() const { return inch_; }
@@ -902,16 +943,16 @@ class SmartPhone : public Camera, public ScreenModule {
 public:
     SmartPhone(int i, int mp, int inch)
         : Device(i), Camera(i, mp), ScreenModule(i, inch) {
-        std::cout << "SmartPhone" << std::endl;
+        cout << "SmartPhone" << endl;
     }
 };
 
 int main() {
     int id, mp, inch;
-    if (!(std::cin >> id >> mp >> inch)) return 0;
+    if (!(cin >> id >> mp >> inch)) return 0;
     SmartPhone sp(id, mp, inch);
-    std::cout << "id=" << sp.deviceId() << " mp=" << sp.cameraMp()
-              << " inch=" << sp.screenInch() << std::endl;
+    cout << "id=" << sp.deviceId() << " mp=" << sp.cameraMp()
+              << " inch=" << sp.screenInch() << endl;
     return 0;
 }
 """,

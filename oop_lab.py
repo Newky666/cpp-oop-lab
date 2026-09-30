@@ -735,9 +735,10 @@ MENU_ITEMS: List[Tuple[str, str, str]] = [
     ("9", "学习日志", "log"),
     ("10", "联网找题 / 导入题目", "search"),
     ("11", "只看某道题的参考解", "solution"),
-    ("12", "打开练习工作区", "open"),
-    ("13", "环境自检", "doctor"),
-    ("14", "题库自检(%d 题参考解真编译)" % len(oop_bank.BUILTIN), "selftest"),
+    ("12", "打开 VSCode 工作区", "open"),
+    ("13", "打开 Visual Studio", "open-vs"),
+    ("14", "环境自检", "doctor"),
+    ("15", "题库自检(%d 题参考解真编译)" % len(oop_bank.BUILTIN), "selftest"),
     ("0", "退出", "quit"),
 ]
 _MENU_NEEDS_ID = {"show", "new", "judge", "review", "solution", "study"}
@@ -782,7 +783,7 @@ def cmd_menu(args: argparse.Namespace) -> int:
     print()
 
     while True:
-        choice = _ask("请选择 [0-14]: ")
+        choice = _ask("请选择 [0-15]: ")
         if choice in ("0", "q", "Q", "quit", "exit", "__quit__"):
             print(oc.color("再见, 下次直接从 `py oop_lab.py` 或 oop_lab.bat 进来。", "grey"))
             return 0
@@ -797,18 +798,6 @@ def cmd_menu(args: argparse.Namespace) -> int:
 
         if command == "quit":
             return 0
-        if command == "open":
-            workspace = oc.ensure_dir(oc.WORKSPACE_DIR)
-            oop_workspace.ensure_lab(workspace)
-            if oop_workspace.open_in_vscode(workspace):
-                print(oc.color("已用 VSCode 打开工作区: %s" % workspace, "green"))
-            elif oop_workspace.open_in_visual_studio(
-                    os.path.join(workspace, oop_workspace.SOLUTION_NAME)):
-                print(oc.color("已用 Visual Studio 打开解决方案。", "green"))
-            else:
-                print(oc.color("请手动打开: %s" % workspace, "yellow"))
-            print()
-            continue
 
         tokens = [command]
         if command in _MENU_NEEDS_ID:
@@ -1033,6 +1022,43 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+def cmd_open(args: argparse.Namespace) -> int:
+    """用 VSCode 打开统一工作区(所有题目共享同一套配置)。"""
+    workspace = oc.ensure_dir(oc.WORKSPACE_DIR)
+    oop_workspace.ensure_lab(workspace)
+    if oop_workspace.open_in_vscode(workspace):
+        print(oc.color("已用 VSCode 打开统一工作区: %s" % workspace, "green"))
+        print("  切到任意题目的 main.cpp 后 Ctrl+Shift+B 构建、F5 调试。")
+        return 0
+    print(oc.color("没找到 VSCode 的 code 命令。", "yellow"))
+    print("  手动打开: %s" % workspace)
+    return 1
+
+
+def cmd_open_vs(args: argparse.Namespace) -> int:
+    """用 Visual Studio 打开统一解决方案(oop_lab.sln)。"""
+    workspace = oc.ensure_dir(oc.WORKSPACE_DIR)
+    oop_workspace.ensure_lab(workspace)
+    sln = oop_workspace.refresh_solution(workspace)
+    if not sln:
+        print(oc.color("工作区里还没有练习工程。", "yellow"))
+        print("  先开练一题再打开 VS: py oop_lab.py new b01")
+        return 1
+    if oop_workspace.open_in_visual_studio(sln):
+        print(oc.color("已用 Visual Studio 打开解决方案: %s" % sln, "green"))
+        print()
+        print(oc.color("在 Visual Studio 里这样操作:", "bold"))
+        print("  1. 左侧「解决方案资源管理器」里找到你要练的那道题")
+        print("  2. 右键那道题 → 「设为启动项目」")
+        print("  3. 按 F5 运行(或 Ctrl+F5 不调试直接运行)")
+        print()
+        print("  代码写在对应题目的 main.cpp 里, 评测读的也是它。")
+        return 0
+    print(oc.color("没找到 Visual Studio(devenv.exe)。", "yellow"))
+    print("  请安装 Visual Studio(勾选「使用 C++ 的桌面开发」), 或手动打开: %s" % sln)
+    return 1
+
+
 # ---------------------------------------------------------------------------
 # 命令行解析
 # ---------------------------------------------------------------------------
@@ -1145,6 +1171,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_self.add_argument("--id", help="只检查某一题")
 
     sub.add_parser("doctor", parents=[parent], help="环境自检")
+
+    sub.add_parser("open", parents=[parent], help="用 VSCode 打开统一工作区")
+    sub.add_parser("open-vs", parents=[parent], help="用 Visual Studio 打开 oop_lab.sln")
     return parser
 
 
@@ -1172,6 +1201,8 @@ HANDLERS = {
     "sources": cmd_sources,
     "selftest": cmd_selftest,
     "doctor": cmd_doctor,
+    "open": cmd_open,
+    "open-vs": cmd_open_vs,
 }
 
 

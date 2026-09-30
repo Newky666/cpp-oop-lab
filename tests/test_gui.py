@@ -594,10 +594,10 @@ class TestActions(GuiCase):
         window.act_review()
         self.assertNotIn("Rule of Three", window.result_text())
 
-    def test_all_nine_actions_exist(self):
+    def test_all_actions_exist(self):
         expected = {"act_plan", "act_study", "act_save", "act_judge",
                     "act_review", "act_profile", "act_search", "act_vscode",
-                    "act_doctor"}
+                    "act_visual_studio", "act_doctor"}
         missing = [name for name in expected
                    if not callable(getattr(oop_gui_app.LabWindow, name, None))]
         self.assertEqual(missing, [])

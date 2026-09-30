@@ -83,8 +83,12 @@ PROBLEMS: List[Dict[str, Any]] = [
             "average() 加了 const 吗?",
         ],
         skeleton=(
-            "#include <iostream>\n"
-            "#include <iomanip>\n"
+            "// ================== TODO: 补全头文件 ==================\n"
+            "// 本题需要用到的头文件(请自己补全 #include):\n"
+            "//   <iostream>\n"
+            "//   <iomanip>\n"
+            "// 下面这行 using namespace std; 已帮你写好\n"
+            "\n"
             "using namespace std;\n"
             "\n"
             "// ================== TODO: 按教材 1.2.2 补全 Student 类 ==================\n"
@@ -183,7 +187,11 @@ PROBLEMS: List[Dict[str, Any]] = [
             "输出格式是「总和 个数」, 中间一个空格。",
         ],
         skeleton=(
-            "#include <iostream>\n"
+            "// ================== TODO: 补全头文件 ==================\n"
+            "// 本题需要用到的头文件(请自己补全 #include):\n"
+            "//   <iostream>\n"
+            "// 下面这行 using namespace std; 已帮你写好\n"
+            "\n"
             "using namespace std;\n"
             "\n"
             "// ================== TODO: 按教材 1.2.3 实现 Counter ==================\n"
@@ -290,8 +298,12 @@ PROBLEMS: List[Dict[str, Any]] = [
             "show() 是 const 吗?",
         ],
         skeleton=(
-            "#include <iostream>\n"
-            "#include <string>\n"
+            "// ================== TODO: 补全头文件 ==================\n"
+            "// 本题需要用到的头文件(请自己补全 #include):\n"
+            "//   <iostream>\n"
+            "//   <string>\n"
+            "// 下面这行 using namespace std; 已帮你写好\n"
+            "\n"
             "using namespace std;\n"
             "\n"
             "// ================== TODO: 按教材 1.6 补全 Person ==================\n"

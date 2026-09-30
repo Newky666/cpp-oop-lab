@@ -1,5 +1,10 @@
-#include <iostream>
-#include <string>
+// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+//   <string>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 在这里定义 Student 类 ==================
 //
@@ -13,11 +18,11 @@
 // ================== 以下 main 不要修改 ==================
 int main() {
     int n;
-    if (!(std::cin >> n)) return 0;
+    if (!(cin >> n)) return 0;
     for (int i = 0; i < n; ++i) {
         int id, score;
-        std::string name;
-        std::cin >> id >> name >> score;
+        string name;
+        cin >> id >> name >> score;
         const Student s(id, name, score);
         s.show();
     }

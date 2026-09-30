@@ -119,12 +119,13 @@ py oop_lab.py submit b04        :: 生成提交包, 贴给 AI/老师点评
   9)  学习日志
   10) 联网找题 / 导入题目
   11) 只看某道题的参考解
-  12) 打开练习工作区
-  13) 环境自检
-  14) 题库自检(40 题参考解真编译, MFC 题未装组件时跳过)
+  12) 打开 VSCode 工作区
+  13) 打开 Visual Studio
+  14) 环境自检
+  15) 题库自检(40 题参考解真编译, MFC 题未装组件时跳过)
   0)  退出
 
-请选择 [0-14]:
+请选择 [0-15]:
 ```
 
 要点：
@@ -393,7 +394,7 @@ py oop_lab.py plan
 | `v18` | 工具条与状态栏 | `CToolBar` / `LoadToolBar` / `CStatusBar` / `SetIndicators`（需 .rc） | 7.5 |
 
 每题都带：`knowledge.md` 讲义 + 题面 + 逐条要求 + 样例 + 提示 + **完成前自查清单** +
-带 `TODO` 的骨架（**头文件写全，不省略任何 `#include` 与 `using`**）+ 自动评测用例
+带 `TODO` 的骨架（**头文件不写全，改成提示让你自己补 `#include`**，`using namespace std;` 已给好）+ 自动评测用例
 （MFC 题为要点检查）+ 参考解（通过后解锁）。
 
 ---
@@ -404,6 +405,8 @@ py oop_lab.py plan
 :: ——— 日常(其实只需要记住第一条) ———
 py oop_lab.py                    交互式主菜单(双击 oop_lab.bat 同效)
 py oop_lab.py menu               显式进入菜单
+py oop_lab.py open               用 VSCode 打开统一工作区
+py oop_lab.py open-vs            用 Visual Studio 打开 oop_lab.sln
 
 :: ——— 老师模式 ———
 py oop_lab.py plan               按你的水平安排今天练哪几道(含理由)
@@ -735,7 +738,7 @@ _p(
     samples=[{"in": "1\n", "out": "1\n"}],
     hints=["提示"],
     checklist=["自查点"],
-    skeleton="#include <iostream>\n// TODO: ...\nint main() { return 0; }\n",
+    skeleton="// TODO: 补全头文件(<iostream> 等)\nusing namespace std;\n// TODO: ...\nint main() { return 0; }\n",
     solution="……完整可编译的参考解……",
     tests=[{"in": "1\n", "out": "1\n"}],
 )
@@ -770,10 +773,10 @@ py oop_lab.py new b08               :: 生成题目目录 + 讲义 + VS 工程
 ```
 ┌────────────────────────────────────────────────────────────────────────────┐
 │ OOP Lab — C++ 面向对象训练营                                                │
-│ [教练排课][学知识点][保存][评测 F5][写法审查][学习画像][找题][打开VSCode][自检]│
+│ [教练排课][学知识点][保存][评测 F5][写法审查][学习画像][找题][打开VSCode][打开VS][自检]│
 ├──────────────┬─────────────────────────────────────────────────────────────┤
 │ ★☆☆ 基础 (0/7)│ ┌ 讲义 ── 题面 ── [我的代码] ── 评测结果 ──────────────────┐│
-│  ● b01 学生类 │ │   1 │ #include <iostream>                                ││
+│  ● b01 学生类 │ │   1 │ // TODO: 补全头文件                                ││
 │  ○ b02 日期类 │ │   2 │ using namespace std;                               ││
 │ ★★☆ 进阶(0/8)│ │   4 │ class Student {                                    ││
 │  ○ i01 Rule… │ │   5 │     // TODO                                        ││

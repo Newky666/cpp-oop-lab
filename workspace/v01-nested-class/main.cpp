@@ -1,5 +1,9 @@
-#include <iostream>
-#include <iomanip>
+// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+//   <iomanip>
+// 下面这行 using namespace std; 已帮你写好
+
 using namespace std;
 
 // ================== TODO: 按教材 1.2.2 补全 Student 类 ==================

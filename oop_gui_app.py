@@ -150,6 +150,7 @@ class LabWindow:
             ("学习画像", self.act_profile, False),
             ("找题", self.act_search, True),
             ("打开VSCode", self.act_vscode, False),
+            ("打开VS", self.act_visual_studio, False),
             ("自检", self.act_doctor, True),
         ):
             button = ttk.Button(bar, text=text, command=command, width=11)
@@ -370,6 +371,27 @@ class LabWindow:
         else:
             messagebox.showinfo("手动打开",
                                 "没找到 VSCode, 请手动打开:\n%s" % oc.WORKSPACE_DIR)
+
+    def act_visual_studio(self) -> None:
+        sln = oop_workspace.refresh_solution(oc.WORKSPACE_DIR)
+        if not sln:
+            messagebox.showinfo("还没有工程",
+                                "工作区里还没有练习工程。\n先在左侧选一道题"
+                                "(会自动生成 VS 工程), 再打开 Visual Studio。")
+            return
+        if oop_workspace.open_in_visual_studio(sln):
+            self._set_status("已用 Visual Studio 打开解决方案")
+            messagebox.showinfo(
+                "Visual Studio 已打开",
+                "已在 Visual Studio 里打开解决方案:\n%s\n\n"
+                "在 VS 里这样操作:\n"
+                "  1. 左侧「解决方案资源管理器」里找到你要练的那道题\n"
+                "  2. 右键那道题 → 「设为启动项目」\n"
+                "  3. 按 F5 运行(或 Ctrl+F5 不调试直接运行)\n\n"
+                "代码写在对应题目的 main.cpp 里, 评测读的也是它。" % sln)
+        else:
+            messagebox.showinfo("手动打开",
+                                "没找到 Visual Studio(devenv), 请手动打开:\n%s" % sln)
 
     def _chooser(self, title: str, narrative: List[str],
                  rows: List[Tuple[str, Any]], on_pick: Callable[[Any], None]) -> None:

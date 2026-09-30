@@ -77,8 +77,13 @@ PROBLEMS: List[Dict[str, Any]] = [
             "构造函数是否用了初始化列表而不是在函数体里赋值?",
             "读取数据的成员函数是否都加了 const?",
         ],
-        skeleton="""#include <iostream>
-#include <string>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+//   <string>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 在这里定义 Student 类 ==================
 //
@@ -92,11 +97,11 @@ PROBLEMS: List[Dict[str, Any]] = [
 // ================== 以下 main 不要修改 ==================
 int main() {
     int n;
-    if (!(std::cin >> n)) return 0;
+    if (!(cin >> n)) return 0;
     for (int i = 0; i < n; ++i) {
         int id, score;
-        std::string name;
-        std::cin >> id >> name >> score;
+        string name;
+        cin >> id >> name >> score;
         const Student s(id, name, score);
         s.show();
     }
@@ -105,33 +110,34 @@ int main() {
 """,
         solution="""#include <iostream>
 #include <string>
+using namespace std;
 
 class Student {
 private:
     int id;
-    std::string name;
+    string name;
     int score;
 
 public:
-    Student(int id_ = 0, const std::string& name_ = "", int score_ = 0)
+    Student(int id_ = 0, const string& name_ = "", int score_ = 0)
         : id(id_), name(name_), score(score_) {}
 
     int getId() const { return id; }
-    const std::string& getName() const { return name; }
+    const string& getName() const { return name; }
     int getScore() const { return score; }
 
     void show() const {
-        std::cout << id << ' ' << name << ' ' << score << '\\n';
+        cout << id << ' ' << name << ' ' << score << '\\n';
     }
 };
 
 int main() {
     int n;
-    if (!(std::cin >> n)) return 0;
+    if (!(cin >> n)) return 0;
     for (int i = 0; i < n; ++i) {
         int id, score;
-        std::string name;
-        std::cin >> id >> name >> score;
+        string name;
+        cin >> id >> name >> score;
         const Student s(id, name, score);
         s.show();
     }
@@ -177,10 +183,15 @@ int main() {
             "valid() 和 toString() 是否都加了 const?",
             "nextDay() 修改了对象状态, 所以不能加 const —— 你分清楚了吗?",
         ],
-        skeleton="""#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <string>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+//   <iomanip>
+//   <sstream>
+//   <string>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 在这里定义 Date 类 ==================
 //
@@ -189,22 +200,22 @@ int main() {
 //   * 构造函数 Date(int y, int m, int d) 使用成员初始化列表
 //   * bool valid() const
 //   * void nextDay()
-//   * std::string toString() const  -> "yyyy-mm-dd"
+//   * string toString() const  -> "yyyy-mm-dd"
 
 
 // ================== 以下 main 不要修改 ==================
 int main() {
     int n;
-    if (!(std::cin >> n)) return 0;
+    if (!(cin >> n)) return 0;
     for (int i = 0; i < n; ++i) {
         int y, m, d;
-        std::cin >> y >> m >> d;
+        cin >> y >> m >> d;
         Date dt(y, m, d);
         if (!dt.valid()) {
-            std::cout << "invalid" << std::endl;
+            cout << "invalid" << endl;
         } else {
             dt.nextDay();
-            std::cout << dt.toString() << std::endl;
+            cout << dt.toString() << endl;
         }
     }
     return 0;
@@ -214,6 +225,7 @@ int main() {
 #include <iomanip>
 #include <sstream>
 #include <string>
+using namespace std;
 
 class Date {
 private:
@@ -250,26 +262,26 @@ public:
         }
     }
 
-    std::string toString() const {
-        std::ostringstream os;
-        os << std::setfill('0') << std::setw(4) << year << '-'
-           << std::setw(2) << month << '-' << std::setw(2) << day;
+    string toString() const {
+        ostringstream os;
+        os << setfill('0') << setw(4) << year << '-'
+           << setw(2) << month << '-' << setw(2) << day;
         return os.str();
     }
 };
 
 int main() {
     int n;
-    if (!(std::cin >> n)) return 0;
+    if (!(cin >> n)) return 0;
     for (int i = 0; i < n; ++i) {
         int y, m, d;
-        std::cin >> y >> m >> d;
+        cin >> y >> m >> d;
         Date dt(y, m, d);
         if (!dt.valid()) {
-            std::cout << "invalid" << std::endl;
+            cout << "invalid" << endl;
         } else {
             dt.nextDay();
-            std::cout << dt.toString() << std::endl;
+            cout << dt.toString() << endl;
         }
     }
     return 0;
@@ -316,8 +328,13 @@ int main() {
             "构造函数是不是也用初始化列表保存了 name?",
             "是否理解了 `Thing c = b;` 走的是拷贝构造而不是 operator= ?",
         ],
-        skeleton="""#include <iostream>
-#include <string>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+//   <string>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 在这里定义 Thing 类 ==================
 //
@@ -329,47 +346,48 @@ int main() {
 
 // ================== 以下 main 不要修改 ==================
 int main() {
-    std::string name;
-    if (!(std::cin >> name)) return 0;
+    string name;
+    if (!(cin >> name)) return 0;
     {
         Thing a(name);
         Thing b(a);
         Thing c = b;
     }
-    std::cout << "done" << std::endl;
+    cout << "done" << endl;
     return 0;
 }
 """,
         solution="""#include <iostream>
 #include <string>
+using namespace std;
 
 class Thing {
 private:
-    std::string name_;
+    string name_;
 
 public:
-    explicit Thing(const std::string& name) : name_(name) {
-        std::cout << "create " << name_ << std::endl;
+    explicit Thing(const string& name) : name_(name) {
+        cout << "create " << name_ << endl;
     }
 
     Thing(const Thing& other) : name_(other.name_) {
-        std::cout << "copy " << name_ << std::endl;
+        cout << "copy " << name_ << endl;
     }
 
     ~Thing() {
-        std::cout << "destroy " << name_ << std::endl;
+        cout << "destroy " << name_ << endl;
     }
 };
 
 int main() {
-    std::string name;
-    if (!(std::cin >> name)) return 0;
+    string name;
+    if (!(cin >> name)) return 0;
     {
         Thing a(name);
         Thing b(a);
         Thing c = b;
     }
-    std::cout << "done" << std::endl;
+    cout << "done" << endl;
     return 0;
 }
 """,
@@ -411,7 +429,12 @@ int main() {
             "析构函数里是不是 delete[]（而不是 delete）?",
             "如果 a 的 n 是 0, 你的代码会不会崩?",
         ],
-        skeleton="""#include <iostream>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 在这里定义 IntArray 类 ==================
 //
@@ -426,17 +449,18 @@ int main() {
 // ================== 以下 main 不要修改 ==================
 int main() {
     int n;
-    if (!(std::cin >> n)) return 0;
+    if (!(cin >> n)) return 0;
     IntArray a(n);
-    for (int i = 0; i < n; ++i) std::cin >> a[i];
+    for (int i = 0; i < n; ++i) cin >> a[i];
     IntArray b = a;          // 深拷贝: b 必须拥有自己的内存
     b[0] = 0;
-    std::cout << a[0] << " " << b[0] << std::endl;
-    std::cout << a.sum() << " " << b.sum() << std::endl;
+    cout << a[0] << " " << b[0] << endl;
+    cout << a.sum() << " " << b.sum() << endl;
     return 0;
 }
 """,
         solution="""#include <iostream>
+using namespace std;
 
 class IntArray {
 private:
@@ -476,13 +500,13 @@ public:
 
 int main() {
     int n;
-    if (!(std::cin >> n)) return 0;
+    if (!(cin >> n)) return 0;
     IntArray a(n);
-    for (int i = 0; i < n; ++i) std::cin >> a[i];
+    for (int i = 0; i < n; ++i) cin >> a[i];
     IntArray b = a;          // 深拷贝: b 必须拥有自己的内存
     b[0] = 0;
-    std::cout << a[0] << " " << b[0] << std::endl;
-    std::cout << a.sum() << " " << b.sum() << std::endl;
+    cout << a[0] << " " << b[0] << endl;
+    cout << a.sum() << " " << b.sum() << endl;
     return 0;
 }
 """,
@@ -523,8 +547,13 @@ int main() {
             "moveBy 有没有误写成修改自身坐标?",
             "构造函数是否用了初始化列表?",
         ],
-        skeleton="""#include <iostream>
-#include <iomanip>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+//   <iomanip>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 在这里定义 Point 类 ==================
 //
@@ -538,18 +567,19 @@ int main() {
 // ================== 以下 main 不要修改 ==================
 int main() {
     int x, y, dx, dy;
-    if (!(std::cin >> x >> y >> dx >> dy)) return 0;
+    if (!(cin >> x >> y >> dx >> dy)) return 0;
     const Point p(x, y);
     Point q = p.moveBy(dx, dy);
-    std::cout << p.x() << " " << p.y() << std::endl;
-    std::cout << q.x() << " " << q.y() << std::endl;
-    std::cout << std::fixed << std::setprecision(2) << p.distTo(q) << std::endl;
+    cout << p.x() << " " << p.y() << endl;
+    cout << q.x() << " " << q.y() << endl;
+    cout << fixed << setprecision(2) << p.distTo(q) << endl;
     return 0;
 }
 """,
         solution="""#include <iostream>
 #include <iomanip>
 #include <cmath>
+using namespace std;
 
 class Point {
 private:
@@ -569,18 +599,18 @@ public:
     double distTo(const Point& other) const {
         double dx = x_ - other.x_;
         double dy = y_ - other.y_;
-        return std::sqrt(dx * dx + dy * dy);
+        return sqrt(dx * dx + dy * dy);
     }
 };
 
 int main() {
     int x, y, dx, dy;
-    if (!(std::cin >> x >> y >> dx >> dy)) return 0;
+    if (!(cin >> x >> y >> dx >> dy)) return 0;
     const Point p(x, y);
     Point q = p.moveBy(dx, dy);
-    std::cout << p.x() << " " << p.y() << std::endl;
-    std::cout << q.x() << " " << q.y() << std::endl;
-    std::cout << std::fixed << std::setprecision(2) << p.distTo(q) << std::endl;
+    cout << p.x() << " " << p.y() << endl;
+    cout << q.x() << " " << q.y() << endl;
+    cout << fixed << setprecision(2) << p.distTo(q) << endl;
     return 0;
 }
 """,
@@ -623,16 +653,21 @@ int main() {
             "计数是不是只在 issue() 里自增?（拷贝构造里千万别加）",
             "serial() / name() 加了 const 吗?",
         ],
-        skeleton="""#include <iostream>
-#include <string>
-#include <vector>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+//   <string>
+//   <vector>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 在这里定义 Ticket 类 ==================
 //
 // 要求:
-//   * static Ticket issue(const std::string& name)   静态工厂, 流水号从 1 递增
+//   * static Ticket issue(const string& name)   静态工厂, 流水号从 1 递增
 //   * int serial() const
-//   * const std::string& name() const
+//   * const string& name() const
 //   * static int totalIssued()
 //
 // 注意: push_back 会拷贝对象, 所以计数只能发生在 issue() 里!
@@ -641,16 +676,16 @@ int main() {
 // ================== 以下 main 不要修改 ==================
 int main() {
     int n;
-    if (!(std::cin >> n)) return 0;
-    std::vector<Ticket> v;
+    if (!(cin >> n)) return 0;
+    vector<Ticket> v;
     for (int i = 0; i < n; ++i) {
-        std::string s;
-        std::cin >> s;
+        string s;
+        cin >> s;
         v.push_back(Ticket::issue(s));
     }
-    std::cout << "issued=" << Ticket::totalIssued() << std::endl;
-    for (std::size_t i = 0; i < v.size(); ++i) {
-        std::cout << v[i].serial() << " " << v[i].name() << std::endl;
+    cout << "issued=" << Ticket::totalIssued() << endl;
+    for (size_t i = 0; i < v.size(); ++i) {
+        cout << v[i].serial() << " " << v[i].name() << endl;
     }
     return 0;
 }
@@ -658,24 +693,25 @@ int main() {
         solution="""#include <iostream>
 #include <string>
 #include <vector>
+using namespace std;
 
 class Ticket {
 private:
     int serial_;
-    std::string name_;
+    string name_;
 
     static int issued_;   // 已发号总数, 属于类而不属于对象
 
-    Ticket(int serial, const std::string& name) : serial_(serial), name_(name) {}
+    Ticket(int serial, const string& name) : serial_(serial), name_(name) {}
 
 public:
-    static Ticket issue(const std::string& name) {
+    static Ticket issue(const string& name) {
         ++issued_;
         return Ticket(issued_, name);
     }
 
     int serial() const { return serial_; }
-    const std::string& name() const { return name_; }
+    const string& name() const { return name_; }
     static int totalIssued() { return issued_; }
 };
 
@@ -683,16 +719,16 @@ int Ticket::issued_ = 0;
 
 int main() {
     int n;
-    if (!(std::cin >> n)) return 0;
-    std::vector<Ticket> v;
+    if (!(cin >> n)) return 0;
+    vector<Ticket> v;
     for (int i = 0; i < n; ++i) {
-        std::string s;
-        std::cin >> s;
+        string s;
+        cin >> s;
         v.push_back(Ticket::issue(s));
     }
-    std::cout << "issued=" << Ticket::totalIssued() << std::endl;
-    for (std::size_t i = 0; i < v.size(); ++i) {
-        std::cout << v[i].serial() << " " << v[i].name() << std::endl;
+    cout << "issued=" << Ticket::totalIssued() << endl;
+    for (size_t i = 0; i < v.size(); ++i) {
+        cout << v[i].serial() << " " << v[i].name() << endl;
     }
     return 0;
 }
@@ -734,7 +770,12 @@ int main() {
             "operator<< 返回的是 std::ostream& 而不是 std::ostream 吗?",
             "有没有把 operator+ 写成修改自身(那 a+b 就会改变 a)?",
         ],
-        skeleton="""#include <iostream>
+        skeleton="""// ================== TODO: 补全头文件 ==================
+// 本题需要用到的头文件(请自己补全 #include):
+//   <iostream>
+// 下面这行 using namespace std; 已帮你写好
+
+using namespace std;
 
 // ================== TODO: 在这里定义 Complex 类 ==================
 //
@@ -749,14 +790,15 @@ int main() {
 // ================== 以下 main 不要修改 ==================
 int main() {
     Complex a, b;
-    if (!(std::cin >> a >> b)) return 0;
-    std::cout << (a + b) << std::endl;
-    std::cout << (a - b) << std::endl;
-    std::cout << (a == b) << std::endl;
+    if (!(cin >> a >> b)) return 0;
+    cout << (a + b) << endl;
+    cout << (a - b) << endl;
+    cout << (a == b) << endl;
     return 0;
 }
 """,
         solution="""#include <iostream>
+using namespace std;
 
 class Complex {
 private:
@@ -781,7 +823,7 @@ public:
         return re_ == other.re_ && im_ == other.im_;
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const Complex& c) {
+    friend ostream& operator<<(ostream& os, const Complex& c) {
         os << c.re_;
         if (c.im_ < 0) os << '-' << -c.im_;
         else os << '+' << c.im_;
@@ -789,17 +831,17 @@ public:
         return os;
     }
 
-    friend std::istream& operator>>(std::istream& is, Complex& c) {
+    friend istream& operator>>(istream& is, Complex& c) {
         return is >> c.re_ >> c.im_;
     }
 };
 
 int main() {
     Complex a, b;
-    if (!(std::cin >> a >> b)) return 0;
-    std::cout << (a + b) << std::endl;
-    std::cout << (a - b) << std::endl;
-    std::cout << (a == b) << std::endl;
+    if (!(cin >> a >> b)) return 0;
+    cout << (a + b) << endl;
+    cout << (a - b) << endl;
+    cout << (a == b) << endl;
     return 0;
 }
 """,

@@ -445,14 +445,14 @@ class TestWorkspace(unittest.TestCase):
         self.assertIn("${fileDirname}", launch["configurations"][0]["program"])
 
     def test_solution_lists_all_projects(self):
-        info = oop_workspace.ensure_workspace(self.problem, root=self.tmp)
+        info = oop_workspace.ensure_workspace(self.problem, root=self.tmp, vs_mode="auto")
         sln_path = os.path.join(info["workspace"], oop_workspace.SOLUTION_NAME)
         text = oc.read_text(sln_path)
         self.assertIn(os.path.basename(info["dir"]), text)
         self.assertIn(oop_workspace.project_guid(os.path.basename(info["dir"])), text)
 
         other = oop_bank.find("b02")
-        oop_workspace.ensure_workspace(other, root=self.tmp)
+        oop_workspace.ensure_workspace(other, root=self.tmp, vs_mode="auto")
         text2 = oc.read_text(sln_path)
         self.assertIn(os.path.basename(oc.resolve_problem_dir(other, self.tmp)), text2)
 
@@ -463,7 +463,7 @@ class TestWorkspace(unittest.TestCase):
         self.assertRegex(first, r"^\{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}\}$")
 
     def test_vcxproj_is_usable(self):
-        info = oop_workspace.ensure_workspace(self.problem, root=self.tmp)
+        info = oop_workspace.ensure_workspace(self.problem, root=self.tmp, vs_mode="auto")
         name = os.path.basename(info["dir"])
         text = oc.read_text(os.path.join(info["dir"], "%s.vcxproj" % name))
         self.assertIn("<PlatformToolset>", text)      # 不写会被 MSBuild 当成 VS2010
@@ -471,6 +471,22 @@ class TestWorkspace(unittest.TestCase):
                       % oop_workspace.detect_platform_toolset(), text)
         self.assertIn("<TargetName>main</TargetName>", text)   # 产物与 judge 一致
         self.assertIn("<LanguageStandard>stdcpp17</LanguageStandard>", text)
+
+    def test_vs_guide_covers_manual_creation(self):
+        """手动模式生成的 vs-guide.md 必须覆盖: 新建项目 / 添加源文件 / 引用 / 评测。"""
+        info = oop_workspace.ensure_workspace(self.problem, root=self.tmp, vs_mode="manual")
+        text = oc.read_text(info["vs_guide"])
+        for token in ("新建一个空项目", "添加", "main.cpp", "#include", "评测", "空项目"):
+            self.assertIn(token, text)
+
+    def test_vs_guide_mfc_mentions_dependencies(self):
+        """MFC 题(如 v17 需要 winmm.lib)的引导要提到附加依赖项。"""
+        mfc = oop_bank.find("v17")
+        if mfc is None:
+            self.skipTest("题库里没有 v17")
+        text = oop_workspace.vs_guide_markdown(mfc)
+        self.assertIn("附加依赖项", text)
+        self.assertIn("winmm.lib", text)
 
     def test_existing_main_is_not_overwritten(self):
         info = oop_workspace.ensure_workspace(self.problem, root=self.tmp)

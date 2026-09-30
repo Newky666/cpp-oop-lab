@@ -50,6 +50,7 @@ KNOWLEDGE_NAME = "knowledge.md"
 PROBLEM_MD_NAME = "problem.md"
 SOLUTION_NAME = "oop_lab.sln"
 CODE_WORKSPACE_NAME = "oop_lab.code-workspace"
+VS_GUIDE_NAME = "vs-guide.md"
 
 # 每题最多生成几个「运行用例」任务(避免任务列表太长)
 MAX_RUN_TASKS = 4
@@ -232,6 +233,128 @@ def problem_markdown(problem: Dict[str, Any]) -> str:
     lines.append("py oop_lab.py study %s        :: 再看一遍知识点讲义" % problem["id"])
     lines.append("```")
     lines.append("")
+    return "\n".join(lines)
+
+
+def vs_guide_markdown(problem: Dict[str, Any]) -> str:
+    """「在 Visual Studio 里手动建工程刷题」的分步引导。
+
+    刻意**不**自动生成 .vcxproj/.sln —— 让学习者亲手走一遍
+    新建项目 → 添加源文件 → 编译运行 → 引用文件, 真正学会 VS 的用法。
+    """
+    is_mfc = str(problem.get("framework") or "console").lower() == "mfc"
+    libs = [str(x) for x in problem.get("libs") or []]
+    needs_resource = bool(problem.get("needs_resource"))
+    slug = re.sub(r"[^A-Za-z0-9_-]", "-", problem.get("slug", problem["id"]))
+
+    lines: List[str] = [
+        "# Visual Studio 手动建工程 · 刷题引导",
+        "",
+        "> 这道题**没有**现成的 VS 工程 —— 工程要你自己动手建, "
+        "目的是熟悉 VS 的新建项目 / 添加源文件 / 编译运行 / 引用文件。",
+        "> 你的代码始终写在本目录的 `main.cpp`, 评测读的也是它 —— "
+        "VS 工程只是个「壳」, 建在哪都不影响判题。",
+        "",
+        "## 0. 前提",
+        "",
+        "- 已安装 Visual Studio, 勾选「使用 C++ 的桌面开发」工作负载。",
+    ]
+    if is_mfc:
+        lines.append("- 本题是 MFC 窗口程序, 还要勾选 "
+                     "「适用于最新 v143 生成工具的 C++ MFC(x86 和 x64)」组件。")
+    lines += [
+        "",
+        "## 1. 新建一个空项目",
+        "",
+        "1. 打开 Visual Studio → 「创建新项目」(Create a new project)。",
+        "2. 顶部筛选: 语言 = **C++**、平台 = **Windows**。",
+        "3. 选模板「**空项目**」(Empty Project), 点「下一步」。",
+        "4. 项目名称随意(如 `%s`), 「位置」建议就选本题目录, 点「创建」。" % slug,
+        "",
+        "## 2. 把 main.cpp 加进项目(两种方式任选)",
+        "",
+        "### 方式 A：新建源文件(学会从零建)",
+        "",
+        "1. 右侧「解决方案资源管理器」里, 右键「源文件」→「添加」→「新建项」。",
+        "2. 选「C++ 文件(.cpp)」, 名称填 `main.cpp`, 点「添加」。",
+        "3. 把本目录 `main.cpp` 的骨架代码**整段粘贴**进去。",
+        "",
+        "### 方式 B：引用现有文件(学会「添加现有项」)",
+        "",
+        "1. 右键「源文件」→「添加」→「现有项」。",
+        "2. 选中本目录的 `main.cpp`, 点「添加」。",
+        "   VS 会**直接引用**这个文件而不是复制 —— 之后你无论在哪改, 评测都读得到。",
+        "",
+        "## 3. 编译运行",
+        "",
+        "- **F5** 调试运行(会自动先编译), **Ctrl+F5** 直接运行不调试。",
+        "- 控制台程序跑完一闪而过是正常的; 想看清输出可在 `main` 末尾临时加 "
+        "`system(\"pause\");`(评测前记得删掉, 否则会卡住)。",
+    ]
+    if is_mfc:
+        lines += [
+            "",
+            "## 4. 引用与配置(MFC 题必读)",
+            "",
+            "### 附加依赖项(链接库)",
+        ]
+        if libs:
+            lines += [
+                "本题需要链接: `%s`。" % "、".join(libs),
+                "",
+                "1. 右键项目 →「属性」→「链接器」→「输入」→「附加依赖项」。",
+                "2. 在末尾追加 `%s`(多个用分号 `;` 分隔), 确定。" % ";".join(libs),
+            ]
+        else:
+            lines += [
+                "MFC 会用到的系统库 VS 一般会自动带上; 若提示 `无法解析的外部符号`, "
+                "按下面步骤把缺的 `.lib` 加到「附加依赖项」:",
+                "",
+                "1. 右键项目 →「属性」→「链接器」→「输入」→「附加依赖项」。",
+                "2. 在末尾追加所需库名(多个用分号 `;` 分隔), 确定。",
+            ]
+        lines += [
+            "",
+            "### 子系统",
+            "",
+            "- 窗口程序要确认:「属性」→「链接器」→「系统」→「子系统」= "
+            "**窗口 (/SUBSYSTEM:WINDOWS)**。",
+        ]
+        if needs_resource:
+            lines += [
+                "",
+                "### 资源文件(.rc)",
+                "",
+                "- 本题需要 `.rc` 资源(对话框 / 工具条等)。在「资源视图」里右键 → 添加 → "
+                "资源, 用资源编辑器建, 或直接添加现有 `.rc` 文件。",
+            ]
+    else:
+        lines += [
+            "",
+            "## 4. 引用(头文件 / 现有项 / 附加依赖)",
+            "",
+            "### #include 引用",
+            "",
+            "- 自己写的头文件用**双引号**: `#include \"myclass.h\"`。",
+            "- 标准库 / 系统头文件用**尖括号**: `#include <iostream>`。",
+            "",
+            "### 添加现有项(引用外部文件)",
+            "",
+            "- 右键「源文件」→「添加」→「现有项」, 把别的 `.cpp`/`.h` 拉进项目一起编译。",
+            "",
+            "### 附加依赖项(链接库)",
+            "",
+            "- 需要额外的 `.lib` 时: 右键项目 →「属性」→「链接器」→「输入」→"
+            "「附加依赖项」, 末尾追加库名。",
+        ]
+    lines += [
+        "",
+        "## 5. 改完怎么评测",
+        "",
+        "- 代码始终写在本目录的 `main.cpp`。",
+        "- 回程序里点「评测」, 或命令行: `py oop_lab.py judge %s`。" % problem["id"],
+        "",
+    ]
     return "\n".join(lines)
 
 
@@ -700,10 +823,15 @@ def student_source_path(problem: Dict[str, Any], root: Optional[str] = None) -> 
 
 def create_problem(problem: Dict[str, Any], root: Optional[str] = None,
                    force: bool = False,
-                   toolchain: Optional[oop_judge.Toolchain] = None) -> Dict[str, Any]:
+                   toolchain: Optional[oop_judge.Toolchain] = None,
+                   vs_mode: str = "auto") -> Dict[str, Any]:
     """在工作区里创建(或补齐)一道题: 讲义 + 题面 + 骨架 + 用例 + VS 工程。
 
     force=False 时不会覆盖已有的 main.cpp —— 学生写过的东西必须保住。
+
+    vs_mode 控制 VS 工程的形态:
+    - "auto"(默认): 生成 .vcxproj + oop_lab.sln, 打开解决方案即可 F5。
+    - "manual": 不自动生成工程, 只生成 vs-guide.md, 让学习者自己手动建项目。
     """
     base = root or oc.WORKSPACE_DIR
     ensure_lab(base, toolchain)
@@ -730,8 +858,14 @@ def create_problem(problem: Dict[str, Any], root: Optional[str] = None,
         put(os.path.join(tests_dir, "%02d.out" % index), test.get("out") or "",
             overwrite=force)
 
-    write_vcxproj(target, problem=problem)
-    solution = refresh_solution(base)
+    solution: Optional[str] = None
+    vs_guide: Optional[str] = None
+    if vs_mode == "auto":
+        write_vcxproj(target, problem=problem)
+        solution = refresh_solution(base)
+    else:
+        vs_guide = os.path.join(target, VS_GUIDE_NAME)
+        put(vs_guide, vs_guide_markdown(problem))
 
     chain = toolchain if toolchain is not None else oop_judge.find_toolchain()
     return {
@@ -742,6 +876,8 @@ def create_problem(problem: Dict[str, Any], root: Optional[str] = None,
         "tests_dir": tests_dir,
         "workspace": base,
         "solution": solution,
+        "vs_guide": vs_guide,
+        "vs_mode": vs_mode,
         "toolchain": chain.label if chain else "无",
         "skills": problem_skills(problem),
         "files": created,
@@ -751,8 +887,10 @@ def create_problem(problem: Dict[str, Any], root: Optional[str] = None,
 # 兼容旧名字(其它模块还在用)
 def ensure_workspace(problem: Dict[str, Any], root: Optional[str] = None,
                      force: bool = False,
-                     toolchain: Optional[oop_judge.Toolchain] = None) -> Dict[str, Any]:
-    return create_problem(problem, root=root, force=force, toolchain=toolchain)
+                     toolchain: Optional[oop_judge.Toolchain] = None,
+                     vs_mode: str = "auto") -> Dict[str, Any]:
+    return create_problem(problem, root=root, force=force,
+                          toolchain=toolchain, vs_mode=vs_mode)
 
 
 def open_in_vscode(path: str) -> bool:
